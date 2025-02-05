@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:06:05
- * @LastEditTime: 2025-01-31 17:52:25
+ * @LastEditTime: 2025-02-05 15:17:47
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetWorkFlowConfigure } from 'package/types'
+import type { CetActuatorResultItem, CetWorkFlowConfigure } from 'package/types'
 import { tabId1, tabUrl1 } from './common'
 
 export const testData1: CetWorkFlowConfigure[] = [
@@ -28,19 +28,13 @@ export const testData1: CetWorkFlowConfigure[] = [
 
 const spBeforeParams = {
   isFirstLevel: true,
-  currentLoopData: undefined,
-  currentLoopIndex: undefined,
-  retryNumber: 0,
-  skipCsCallbackError: false,
 }
-const csFnParams = { isFirstLevel: true, currentLoopData: undefined, currentLoopIndex: undefined, retryNumber: 0, skipCsCallbackError: false, spBeforeFnResult: {
+const csFnParams = { isFirstLevel: true, spBeforeFnResult: {
   next: true,
-  data: {
-    spBeforeParams,
-  },
+  data: { spBeforeParams },
 } }
 
-export const testData1Result = {
+export const testData1Result: CetActuatorResultItem = {
   name: 'test',
   success: true,
   spBeforeFn: {
@@ -64,11 +58,15 @@ export const testData1Result = {
       result: 'ok',
       spAfterParams: {
         isFirstLevel: true,
-        currentLoopData: undefined,
-        currentLoopIndex: undefined,
-        retryNumber: 0,
-        skipCsCallbackError: false,
-        csFnResult: csFnParams,
+        csFnResult: {
+          next: true,
+          data: {
+            result: 'test',
+            csFnParams,
+          },
+          tabId: tabId1,
+          tabUrl: tabUrl1,
+        },
       },
     },
   },

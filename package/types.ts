@@ -1,13 +1,20 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-01-31 16:50:13
+ * @LastEditTime: 2025-02-05 17:31:50
  * @LastEditors: Lu
  * @Description:
  */
 export interface LoopDataItem {
   name: string
   value: string | number | symbol
+}
+
+export interface CetActuatorCache {
+  name: string
+  retryNumber: number
+  currentRetryNumber: number
+  isRetry: boolean
 }
 
 export interface CetCommonParams {
@@ -25,8 +32,8 @@ export interface CsFnResult<T = any> {
   next: boolean
   data?: T
   retryTarget?: string
-  tabId: number
-  tabUrl: string
+  tabId?: number
+  tabUrl?: string
 }
 export interface SpBeforeFnParams extends CetCommonParams {}
 export interface SpAfterFnParams extends CetCommonParams {
@@ -53,8 +60,10 @@ export interface CetWorkFlowConfigure {
   children?: CetWorkFlowConfigure[]
   loopData?: LoopDataItem[]
   csRetryNumber?: number
+  csRetryInterval?: number
   retryNumber?: number
-  skipCsCallbackError?: boolean
+  retryTarget?: string
+  skipCsCallbackFail?: boolean
   csFn?: CsFn
   spBeforeFn?: SpBeforeFn
   spAfterFn?: SpAfterFn
@@ -68,9 +77,9 @@ export interface CetNextTimeFn {
 
 export interface CetActuatorResultItem {
   name: string
-  spBeforeFn: SpFnResult<any>
-  csFn: CsFnResult<any>
-  spAfterFn: SpFnResult<any>
+  spBeforeFn?: SpFnResult<any>
+  csFn?: CsFnResult<any>
+  spAfterFn?: SpFnResult<any>
   success: boolean
 }
 
