@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-02-05 17:31:50
+ * @LastEditTime: 2025-02-06 23:26:27
  * @LastEditors: Lu
  * @Description:
  */
@@ -27,6 +27,7 @@ export interface CetCommonParams {
 
 export interface CsFnParams extends CetCommonParams {
   spBeforeFnResult?: SpFnResult<any>
+  csRetryNumber?: number
 }
 export interface CsFnResult<T = any> {
   next: boolean

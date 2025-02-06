@@ -1,73 +1,149 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:06:05
- * @LastEditTime: 2025-02-05 15:17:47
+ * @LastEditTime: 2025-02-06 20:50:43
  * @LastEditors: Lu
  * @Description:
  */
 import type { CetActuatorResultItem, CetWorkFlowConfigure } from 'package/types'
 import { tabId1, tabUrl1 } from './common'
+import { testData0, testData0Result } from './test0'
 
 export const testData1: CetWorkFlowConfigure[] = [
+  { ...testData0[0], name: 'test0', children: [
+    {
+      ...testData0[0],
+      name: 'test01',
+    },
+    {
+      ...testData0[0],
+      name: 'test02',
+    },
+  ] },
+  { ...testData0[0], name: 'test1' },
+]
+
+export const testData1Result: CetActuatorResultItem[] = [
   {
-    name: 'test',
-    spBeforeFn: async (params) => {
-      return { next: true, data: { spBeforeParams: params } }
+    ...testData0Result,
+    name: 'test0',
+  },
+  {
+    ...testData0Result,
+    name: 'test01',
+  },
+  {
+    ...testData0Result,
+    name: 'test02',
+  },
+  {
+    ...testData0Result,
+    name: 'test1',
+  },
+]
+export const testData11: CetWorkFlowConfigure[] = [
+  { ...testData0[0], name: 'test0', children: [
+    {
+      ...testData0[0],
+      name: 'test01',
+      spBeforeFn: async () => ({ next: false }),
     },
-    csFn: async (params) => {
-      return { next: true, data: {
-        result: 'test',
-        csFnParams: params,
-      }, tabId: tabId1, tabUrl: tabUrl1 }
+    {
+      ...testData0[0],
+      name: 'test02',
     },
-    spAfterFn: async (params) => {
-      return { next: true, data: { spAfterParams: params, result: 'ok' } }
-    },
+  ] },
+  { ...testData0[0], name: 'test1' },
+]
+
+export const testData11Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    name: 'test0',
+  },
+  {
+    ...testData0Result,
+    name: 'test01',
+    spBeforeFn: { next: false },
+    success: false,
   },
 ]
 
-const spBeforeParams = {
-  isFirstLevel: true,
-}
-const csFnParams = { isFirstLevel: true, spBeforeFnResult: {
-  next: true,
-  data: { spBeforeParams },
-} }
-
-export const testData1Result: CetActuatorResultItem = {
-  name: 'test',
-  success: true,
-  spBeforeFn: {
-    next: true,
-    data: {
-      spBeforeParams,
-    },
-  },
-  csFn: {
-    next: true,
-    data: {
-      result: 'test',
-      csFnParams,
-    },
-    tabId: tabId1,
-    tabUrl: tabUrl1,
-  },
-  spAfterFn: {
-    next: true,
-    data: {
-      result: 'ok',
-      spAfterParams: {
-        isFirstLevel: true,
-        csFnResult: {
-          next: true,
-          data: {
-            result: 'test',
-            csFnParams,
-          },
-          tabId: tabId1,
-          tabUrl: tabUrl1,
+export function getTestData12(): CetWorkFlowConfigure[] {
+  let retryNum = 0
+  return [
+    { ...testData0[0], name: 'test0', children: [
+      {
+        ...testData0[0],
+        name: 'test01',
+        retryNumber: 1,
+        retryTarget: 't1',
+        spBeforeFn: async () => {
+          retryNum += 1
+          return { next: retryNum >= 2, data: 1 }
         },
       },
-    },
-  },
+      {
+        ...testData0[0],
+        name: 'test02',
+      },
+    ] },
+    { ...testData0[0], name: 'test1' },
+  ]
 }
+
+export const testData12Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    name: 'test0',
+  },
+  {
+    ...testData0Result,
+    name: 'test01',
+  },
+  {
+    ...testData0Result,
+    name: 'test02',
+  },
+  {
+    ...testData0Result,
+    name: 'test1',
+  },
+]
+export function getTestData13(): CetWorkFlowConfigure[] {
+  let retryNum = 0
+  return [
+    { ...testData0[0], name: 'test0', children: [
+      { ...testData0[0], csRetryNumber: 2, csRetryInterval: 10, spBeforeFn: async () => {
+        return { next: true, data: 1 }
+      }, csFn: async () => {
+        retryNum += 1
+        return { next: retryNum === 3, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
+      } },
+      {
+        ...testData0[0],
+        name: 'test02',
+      },
+    ] },
+    { ...testData0[0], name: 'test1' },
+  ]
+}
+
+export const testData13Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    name: 'test0',
+  },
+  {
+    ...testData0Result,
+    name: 'test01',
+  },
+  {
+    ...testData0Result,
+    name: 'test02',
+  },
+  {
+    ...testData0Result,
+    name: 'test1',
+  },
+]

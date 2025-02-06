@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-05 15:38:22
- * @LastEditTime: 2025-02-05 17:32:58
+ * @LastEditTime: 2025-02-06 23:34:55
  * @LastEditors: Lu
  * @Description:
  */
@@ -45,7 +45,7 @@ export const testData0Result: CetActuatorResultItem = {
 
 export const testData01: CetWorkFlowConfigure[] = [
   {
-    name: 'test',
+    name: 'test1',
     spBeforeFn: async (params) => {
       return { next: true, data: { spBeforeParams: params } }
     },
@@ -70,7 +70,7 @@ const csFnParams = { isFirstLevel: true, spBeforeFnResult: {
 } }
 
 export const testData01Result: CetActuatorResultItem = {
-  name: 'test',
+  name: 'test1',
   success: true,
   spBeforeFn: {
     next: true,
@@ -211,6 +211,67 @@ export const testData07Result: CetActuatorResultItem[] = [
     csFn: {
       next: false,
       data: 3,
+    },
+  },
+]
+
+export function getTestData08(): CetWorkFlowConfigure[] {
+  let retryNum = 0
+  return [
+    {
+      ...testData0[0],
+      name: 't1',
+      retryNumber: 2,
+      retryTarget: 't1',
+      spBeforeFn: async (p) => {
+        retryNum += 1
+        return { next: retryNum > 1, data: { paramsRetryNumber: p.retryNumber } }
+      },
+      csFn: async (p) => {
+        return { next: true, data: { paramsRetryNumber: p.retryNumber } }
+      },
+      spAfterFn: async (p) => {
+        return { next: true, data: { paramsRetryNumber: p.retryNumber } }
+      },
+    },
+  ]
+}
+export const testData08Result: CetActuatorResultItem[] = [
+  {
+    ...omit(testData0Result, ['csFn', 'spAfterFn']),
+    success: true,
+    name: 't1',
+    spBeforeFn: {
+      next: true,
+      data: { paramsRetryNumber: 1 },
+    },
+    csFn: {
+      next: true,
+      data: { paramsRetryNumber: 1 },
+    },
+    spAfterFn: {
+      next: true,
+      data: { paramsRetryNumber: 1 },
+    },
+  },
+]
+
+export function getTestData09(): CetWorkFlowConfigure[] {
+  let retryNum = 0
+  return [
+    { ...testData0[0], csRetryNumber: 2, csRetryInterval: 10, skipCsCallbackFail: true, csFn: async (p) => {
+      retryNum += 1
+      return { next: retryNum === 3, data: { paramsRetryNumber: p.csRetryNumber } }
+    } },
+  ]
+}
+export const testData09Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    success: true,
+    csFn: {
+      next: true,
+      data: { paramsRetryNumber: 2 },
     },
   },
 ]

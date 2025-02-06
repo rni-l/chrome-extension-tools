@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-02-05 17:50:57
+ * @LastEditTime: 2025-02-06 23:33:44
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetWorkFlowConfigure, CsFnResult, SpFnResult } from 'package/types'
+import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetCommonParams, CetWorkFlowConfigure, CsFnResult, SpFnResult } from 'package/types'
 import { loopCheck } from 'package/utils'
 
 const C_NEXT_TIME = 1000 * 1 * 60
@@ -44,21 +44,23 @@ export class Actuator {
     })
   }
 
-  checkIsSameName() {
-    const obj: Record<string, boolean> = {}
-    return this.configures.some((v) => {
+  checkIsSameName(targetConfigures: CetWorkFlowConfigure[], obj: Record<string, boolean> = {}): boolean {
+    return targetConfigures.some((v) => {
       if (obj[v.name]) {
         return true
       }
       else {
         obj[v.name] = true
+        if (v.children) {
+          return this.checkIsSameName(v.children, obj)
+        }
         return false
       }
     })
   }
 
   async run(): Promise<CetActuatorResultItem[]> {
-    if (this.checkIsSameName()) {
+    if (this.checkIsSameName(this.configures)) {
       console.log('error')
       throw new Error('name 不能重复')
     }
@@ -68,15 +70,17 @@ export class Actuator {
       return this.getActuatorCache(step)
     })
     const tasks = this.configures.map((step) => {
-      return async () => {
+      return async (currentCache: CetActuatorCache) => {
         logItem = {
           name: step.name,
           success: false,
         }
+        const commonParams: CetCommonParams = { isFirstLevel: true }
+        if (currentCache.isRetry && currentCache.currentRetryNumber > 0) {
+          commonParams.retryNumber = currentCache.currentRetryNumber
+        }
         const spBeforeResult: SpFnResult = step.spBeforeFn
-          ? await step.spBeforeFn({
-            isFirstLevel: true,
-          })
+          ? await step.spBeforeFn(commonParams)
           : getCommonSpResult()
         logItem.spBeforeFn = spBeforeResult
         if (!spBeforeResult || !spBeforeResult.next) {
@@ -84,10 +88,11 @@ export class Actuator {
         }
         let csResult: CsFnResult = getCommonCsResult()
         if (step.csFn) {
-          await loopCheck(async () => {
+          await loopCheck(async (number) => {
             csResult = await step.csFn!({
-              isFirstLevel: true,
+              ...commonParams,
               spBeforeFnResult: spBeforeResult,
+              csRetryNumber: number,
             })
             return csResult.next
           }, (step.csRetryNumber || 0) + 1, step.csRetryInterval || 1000)
@@ -98,7 +103,7 @@ export class Actuator {
         }
         const spAfterResult: SpFnResult = step.spAfterFn
           ? await step.spAfterFn({
-            isFirstLevel: true,
+            ...commonParams,
             csFnResult: csResult,
           })
           : getCommonSpResult()
@@ -112,7 +117,7 @@ export class Actuator {
     })
     let i = 0
     while (i < tasks.length) {
-      const result = await tasks[i]()
+      const result = await tasks[i](actuatorCacheList[i])
       if (actuatorCacheList[i].isRetry && !result) {
         actuatorCacheList[i].currentRetryNumber++
         if (actuatorCacheList[i].currentRetryNumber <= actuatorCacheList[i].retryNumber) {

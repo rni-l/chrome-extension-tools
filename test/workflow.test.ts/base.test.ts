@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-02-05 23:15:01
+ * @LastEditTime: 2025-02-06 23:45:48
  * @LastEditors: Lu
  * @Description:
  */
@@ -13,12 +13,18 @@ import {
   getTestData05,
   getTestData06,
   getTestData07,
+  getTestData08,
+  getTestData09,
+  getTestData12,
+  getTestData13,
   tabId1,
   tabUrl1,
   testData0,
   testData0Result,
   testData01,
   testData01Result,
+  testData1,
+  testData1Result,
   testData02,
   testData02Result,
   testData03Result,
@@ -26,6 +32,12 @@ import {
   testData05Result,
   testData06Result,
   testData07Result,
+  testData08Result,
+  testData09Result,
+  testData11,
+  testData11Result,
+  testData12Result,
+  testData13Result,
 } from './test-data'
 
 /**
@@ -37,6 +49,34 @@ describe('工作流：Actuator', () => {
       const ins = new Actuator([
         testData0[0],
         testData0[0],
+      ])
+      expect(() => ins.run()).rejects.toThrowError('name 不能重复')
+    })
+    it('两层级，name 不能有重复', async () => {
+      const ins = new Actuator([
+        {
+          ...testData0[0],
+          children: [
+            testData0[0],
+          ],
+        },
+      ])
+      expect(() => ins.run()).rejects.toThrowError('name 不能重复')
+    })
+    it('多层级，name 不能有重复', async () => {
+      const ins = new Actuator([
+        {
+          ...testData0[0],
+          children: [
+            {
+              ...testData0[0],
+              name: '2',
+              children: [
+                testData0[0],
+              ],
+            },
+          ],
+        },
       ])
       expect(() => ins.run()).rejects.toThrowError('name 不能重复')
     })
@@ -128,7 +168,7 @@ describe('工作流：Actuator', () => {
       const logs = await ins.run()
       expect(logs).toMatchObject(testData02Result)
     })
-    it('配置 retryNumber 和 retryTarget，当该任务失败时（success: false），会跳转到指定节点并执行指定次数', async () => {
+    it ('配置 retryNumber 和 retryTarget，当该任务失败时（success: false），会跳转到指定节点并执行指定次数', async () => {
       const ins = new Actuator(getTestData03())
       const logs = await ins.run()
       expect(logs).toMatchObject(testData03Result)
@@ -152,6 +192,39 @@ describe('工作流：Actuator', () => {
       const ins = new Actuator(getTestData07())
       const logs = await ins.run()
       expect(logs).toMatchObject(testData07Result)
+    })
+    it('spBefore, csFn, spAfter 会接收到当前的 retryNumber', async () => {
+      const ins = new Actuator(getTestData08())
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData08Result)
+    })
+    it('csFn 会接收到当前的 csRetryNumber', async () => {
+      const ins = new Actuator(getTestData09())
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData09Result)
+    })
+  })
+
+  describe('多层级', () => {
+    it('先执行当前任务的子任务，成功并执行完后，再执行当前任务的下一个任务', async () => {
+      const ins = new Actuator(testData1)
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData1Result)
+    })
+    it('子任务返回失败，则整个任务结束', async () => {
+      const ins = new Actuator(testData11)
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData11Result)
+    })
+    it('子任务也支持 retryNumber', async () => {
+      const ins = new Actuator(getTestData12())
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData12Result)
+    })
+    it('子任务也支持 csRetryNumber', async () => {
+      const ins = new Actuator(getTestData13())
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData13Result)
     })
   })
 })
