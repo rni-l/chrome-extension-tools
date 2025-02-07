@@ -8,3 +8,4 @@
 export * from './common'
 export * from './test0'
 export * from './test1'
+export * from './test2'
