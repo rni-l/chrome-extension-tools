@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-02-07 22:26:41
+ * @LastEditTime: 2025-02-08 23:09:31
  * @LastEditors: Lu
  * @Description:
  */
@@ -91,4 +91,6 @@ export interface CetActuatorParams {
 
 export interface CetTaskRunOptions {
   logItem: CetActuatorResultItem | undefined
+  currentLoopData?: CetLoopDataItem
+  currentLoopIndex?: number
 }

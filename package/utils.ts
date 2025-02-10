@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-02-06 23:33:51
+ * @LastEditTime: 2025-02-10 23:11:05
  * @LastEditors: Lu
  * @Description:
  */
@@ -23,4 +23,34 @@ export async function loopCheck(fn: (times: number) => Promise<boolean>, maxTime
     times++
   }
   return result
+}
+
+export function isExist(obj: any) {
+  return obj !== undefined && obj !== null
+}
+
+export class SimpleStack {
+  private stack: number[] = []
+  push(item: number) {
+    this.stack.push(item)
+  }
+
+  pop() {
+    return this.stack.pop()
+  }
+
+  peek() {
+    return this.stack[this.stack.length - 1]
+  }
+
+  peekAdd() {
+    const t = this.stack[this.stack.length - 1]
+    if (t !== undefined) {
+      this.stack[this.stack.length - 1] = t + 1
+    }
+  }
+
+  isEmpty() {
+    return this.stack.length === 0
+  }
 }

@@ -1,13 +1,14 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-02-07 23:51:22
+ * @LastEditTime: 2025-02-10 23:13:29
  * @LastEditors: Lu
  * @Description:
  */
 import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetTaskRunOptions, CetWorkFlowConfigure } from 'package/types'
-import type { TCetTask } from './tasks'
-import { findTaskByIndexPath, getTaskTree } from './tasks'
+import type { CetTask, TCetTask } from './tasks'
+import { SimpleStack } from 'package/utils'
+import { findParentTask, findTaskByIndexPath, getTaskTree } from './tasks'
 
 const C_NEXT_TIME = 1000 * 1 * 60
 
@@ -85,80 +86,96 @@ export class CetActuator {
     // const targetConfigureName = this.configures[0].name
     const { rootTask, nameMap } = getTaskTree(this.configures)
     let targetTask: TCetTask | undefined = rootTask
-    console.log(targetTask)
-    while (true) {
-      if (!targetTask) {
-        break
-      }
+    let isCurrentChild = false // 当前节点是否子级
+    let currentLevel = 1
+    let isLoop = false // 当前节点是否循环
+    const currentLoopIndexStack = new SimpleStack()
+    while (targetTask) {
       if (targetTask.isRoot) {
         targetTask = targetTask.children[0]
+        currentLevel = targetTask.level
         continue
       }
-      else {
-        const cache = actuatorCacheMap[targetTask.name]
-        const result = await targetTask.run(cache, options)
-        if (cache.isRetry && !result) {
-          cache.currentRetryNumber++
-          if (cache.currentRetryNumber <= cache.retryNumber) {
-            // TODO: 不同层级切换
-            const retryTarget = findTaskByIndexPath(rootTask, nameMap[targetTask.configure.retryTarget!])
-            if (!retryTarget) {
-              throw new Error(`retryTargetIndex not found, ${targetTask.configure.retryTarget}`)
-            }
-            // 根据 name 找到对应的任务
-            targetTask = retryTarget
-            // targetConfigureName = retryTarget.name
-            // const retryTargetIndex = this.getRetryTargetIndex(configure.retryTarget!)
-            // if (retryTargetIndex < 0) {
-            //   throw new Error(`retryTargetIndex not found, ${configure.retryTarget}`)
-            // }
-            // i = retryTargetIndex
-            continue
+      const cache = actuatorCacheMap[targetTask.name]
+      const result = await targetTask.run(cache, options)
+      if (cache.isRetry && !result) {
+        cache.currentRetryNumber++
+        if (cache.currentRetryNumber <= cache.retryNumber) {
+          // TODO: 不同层级切换，需要初始化配置
+          const retryTarget = findTaskByIndexPath(rootTask, nameMap[targetTask.configure.retryTarget!])
+          if (!retryTarget) {
+            throw new Error(`retryTargetIndex not found, ${targetTask.configure.retryTarget}`)
           }
+          // 根据 name 找到对应的任务
+          targetTask = retryTarget
+          continue
         }
-        options.logItem && logs.push(options.logItem)
-        // 失败，中断执行
-        if (!result) {
-          break
-        }
-        // 检查是否有子级
-        targetTask = findTaskByIndexPath(rootTask, targetTask.nextTaskPath)
-        if (!targetTask)
-          break
       }
+      options.logItem && logs.push(options.logItem)
+      // 失败，中断执行
+      if (!result) {
+        break
+      }
+      let nextTask: CetTask | undefined
+      // 检查是否有子级
+      if (targetTask.hasChildren) {
+        // 开启循环
+        isCurrentChild = true
+        nextTask = targetTask.children[0]
+      }
+      else {
+        nextTask = findTaskByIndexPath(rootTask, targetTask.nextTaskPath)
+      }
+      if (!nextTask) {
+        // console.log('not found nextTask2', isLoop, currentLoopIndexStack.peek(), targetTask.parentLoopData!.length - 1)
+        if (isLoop && (currentLoopIndexStack.peek() || 0) < targetTask.parentLoopData!.length - 1) {
+          // 循环完毕，检查 loopIndex 是否在最后一个，如果不是则继续走
+          // 如果是最后一个，则回到父级
+          currentLoopIndexStack.peekAdd()
+          nextTask = findTaskByIndexPath(rootTask, [...targetTask.indexPath.slice(0, -1), 0])!
+        }
+        else if (isCurrentChild && targetTask.isCurrentLast) {
+          // 不会出现当前时子级 && 没有下一级 && 不是最后一个的情况
+          // 检查当前是否循环 && 最后一个
+          // 循环完毕，回到父级
+          nextTask = findParentTask(rootTask, targetTask.indexPath.slice(0, -1))
+          if (!nextTask) {
+            break
+          }
+          isCurrentChild = nextTask.level !== 1
+        }
+        else {
+          break
+        }
+      }
+      // isLoop = !!nextTask.configure.loopData && nextTask.configure.loopData.length > 0
+      isLoop = nextTask.isLoopItem
+      // console.log(nextTask.name, isLoop)
+      // 往下走
+      if (currentLevel < nextTask.level) {
+        // 切到下一级
+        if (isLoop) {
+          currentLoopIndexStack.push(0)
+        }
+      }
+      else if (currentLevel > nextTask.level) {
+        // 往上走
+        if (isLoop) {
+          currentLoopIndexStack.pop()
+          // console.log('top parent', currentLoopIndexStack.peek(), nextTask.name)
+        }
+      }
+      else {
+        // 同级
+      }
+      if (isLoop) {
+        // 找到当前的父级，父级肯定存在并且有 loopData
+        options.currentLoopData = nextTask.parentLoopData![currentLoopIndexStack.peek()]
+        options.currentLoopIndex = currentLoopIndexStack.peek()
+      }
+      currentLevel = nextTask.level
+      targetTask = nextTask
     }
-    // while (targetConfigureName) {
-    //   const configure = this.findConfigureByName(targetConfigureName)
-    //   if (!configure) {
-    //     throw new Error(`targetConfigureName not found, ${targetConfigureName}`)
-    //   }
-    //   const cache = actuatorCacheMap[targetConfigureName]
-    //   // const result = await tasks[i](cache)
-    //   const result = await this.getTask(configure, options)(cache)
-    //   if (cache.isRetry && !result) {
-    //     cache.currentRetryNumber++
-    //     if (cache.currentRetryNumber <= cache.retryNumber) {
-    //       // TODO: 不同层级切换
-    //       const retryTarget = this.findConfigureByName(configure.retryTarget!)
-    //       if (!retryTarget) {
-    //         throw new Error(`retryTargetIndex not found, ${configure.retryTarget}`)
-    //       }
-    //       targetConfigureName = retryTarget.name
-    //       // const retryTargetIndex = this.getRetryTargetIndex(configure.retryTarget!)
-    //       // if (retryTargetIndex < 0) {
-    //       //   throw new Error(`retryTargetIndex not found, ${configure.retryTarget}`)
-    //       // }
-    //       // i = retryTargetIndex
-    //       continue
-    //     }
-    //   }
-    //   options.logItem && logs.push(options.logItem)
-    //   // 失败，中断执行
-    //   if (!result) {
-    //     break
-    //   }
-    //   // 检查是否有子级
-    // }
     this.params.callback?.(logs)
     return logs
   }

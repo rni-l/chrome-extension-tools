@@ -1,11 +1,12 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:06:05
- * @LastEditTime: 2025-02-07 17:13:00
+ * @LastEditTime: 2025-02-08 01:08:14
  * @LastEditors: Lu
  * @Description:
  */
 import type { CetActuatorResultItem, CetWorkFlowConfigure } from 'package/types'
+import { omit } from 'lodash-es'
 import { tabId1, tabUrl1 } from './common'
 import { testData0, testData0Result } from './test0'
 
@@ -62,7 +63,7 @@ export const testData11Result: CetActuatorResultItem[] = [
     name: 'test0',
   },
   {
-    ...testData0Result,
+    ...omit(testData0Result, ['csFn', 'spAfterFn']),
     name: 'test01',
     spBeforeFn: { next: false },
     success: false,
@@ -77,7 +78,7 @@ export function getTestData12(): CetWorkFlowConfigure[] {
         ...testData0[0],
         name: 'test01',
         retryNumber: 1,
-        retryTarget: 't1',
+        retryTarget: 'test01',
         spBeforeFn: async () => {
           retryNum += 1
           return { next: retryNum >= 2, data: 1 }
@@ -119,7 +120,7 @@ export function getTestData13(): CetWorkFlowConfigure[] {
       }, csFn: async () => {
         retryNum += 1
         return { next: retryNum === 3, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
-      } },
+      }, name: 'test01' },
       {
         ...testData0[0],
         name: 'test02',

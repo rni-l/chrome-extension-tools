@@ -1,13 +1,13 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-02-07 23:52:09
+ * @LastEditTime: 2025-02-10 17:49:14
  * @LastEditors: Lu
  * @Description:
  */
 
-import type { CetActuatorCache, CetCommonParams, CetCsFnResult, CetSpFnResult, CetTaskRunOptions, CetWorkFlowConfigure } from 'package/types'
-import { loopCheck } from 'package/utils'
+import type { CetActuatorCache, CetCommonParams, CetCsFnResult, CetLoopDataItem, CetSpFnResult, CetTaskRunOptions, CetWorkFlowConfigure } from 'package/types'
+import { isExist, loopCheck } from 'package/utils'
 
 function getCommonSpResult(): CetSpFnResult {
   return {
@@ -19,7 +19,11 @@ function getCommonCsResult(): CetCsFnResult {
     next: true,
   }
 }
-
+interface ICheckOptions {
+  isRoot?: boolean
+  isCurrentLast?: boolean
+  parentLoopData?: CetLoopDataItem[]
+}
 export class CetTask {
   configure: CetWorkFlowConfigure
   name = ''
@@ -29,8 +33,11 @@ export class CetTask {
   nextTaskPath: number[] = []
   hasChildren = false
   isRoot = false
+  isCurrentLast = false
+  isLoopItem = false
+  parentLoopData: CetLoopDataItem[] = []
 
-  constructor(configure: CetWorkFlowConfigure, path: number[], isRoot?: boolean) {
+  constructor(configure: CetWorkFlowConfigure, path: number[], checkOptions: ICheckOptions = {}) {
     this.name = configure.name
     this.configure = configure
     this.indexPath = path
@@ -42,7 +49,10 @@ export class CetTask {
       return v
     })
     this.hasChildren = !!configure.children?.length
-    this.isRoot = !!isRoot
+    this.isRoot = !!checkOptions.isRoot
+    this.isCurrentLast = !!checkOptions.isCurrentLast
+    this.isLoopItem = !!checkOptions.parentLoopData?.length
+    this.parentLoopData = checkOptions.parentLoopData || []
   }
 
   appendChildren(children: CetTask[]) {
@@ -60,6 +70,10 @@ export class CetTask {
     if (currentCache.isRetry && currentCache.currentRetryNumber > 0) {
       commonParams.retryNumber = currentCache.currentRetryNumber
     }
+    if (isExist(options.currentLoopData)) {
+      commonParams.currentLoopData = options.currentLoopData
+      commonParams.currentLoopIndex = options.currentLoopIndex
+    }
     const spBeforeResult: CetSpFnResult = configure.spBeforeFn
       ? await configure.spBeforeFn(commonParams)
       : getCommonSpResult()
@@ -70,6 +84,7 @@ export class CetTask {
     let csResult: CetCsFnResult = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
+        // TODO: 切换成消息通知的模式
         csResult = await configure.csFn!({
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
@@ -97,12 +112,17 @@ export class CetTask {
   }
 }
 
-export function getTaskTrees(configures: CetWorkFlowConfigure[], parentPath: number[] = [], nameMap: Record<string, number[]>) {
+export function getTaskTrees(configures: CetWorkFlowConfigure[], parentPath: number[] = [], nameMap: Record<string, number[]>, parentTask?: CetTask) {
   const trees: CetTask[] = configures.map((configure, i) => {
-    const tree = new CetTask(configure, [i])
+    const isCurrentLast = i === configures.length - 1
+    const tree = new CetTask(configure, [...parentPath, i], {
+      isCurrentLast,
+      parentLoopData: parentTask?.configure?.loopData || [],
+    })
     nameMap[configure.name] = tree.indexPath
-    if (configure.children)
-      tree.children = getTaskTrees(configure.children, [...parentPath, i].filter(v => v >= 0), nameMap)
+    if (configure.children) {
+      tree.children = getTaskTrees(configure.children, [...parentPath, i], nameMap, tree)
+    }
     return tree
   })
   return trees
@@ -110,7 +130,7 @@ export function getTaskTrees(configures: CetWorkFlowConfigure[], parentPath: num
 
 export function getTaskTree(configures: CetWorkFlowConfigure[]) {
   const nameMap: Record<string, number[]> = {}
-  const rootTask = new CetTask({ name: 'root', children: [] }, [], true)
+  const rootTask = new CetTask({ name: 'root', children: [] }, [], { isRoot: true })
   rootTask.appendChildren(getTaskTrees(configures, [], nameMap))
   return { rootTask, nameMap }
 }
@@ -118,10 +138,15 @@ export function getTaskTree(configures: CetWorkFlowConfigure[]) {
 export type TCetTask = InstanceType<typeof CetTask>
 
 export function findTaskByIndexPath(task: TCetTask, indexPath: number[]) {
+  if (!indexPath.length)
+    return undefined
   try {
     let t: TCetTask | undefined = task
-    for (let index = 0; index < indexPath.length; index++) {
-      t = task.children[indexPath[index]]
+    const tmp = [...indexPath]
+    // console.log(tmp)
+    for (let index = 0; index < tmp.length; index++) {
+      t = t.children[tmp[index]]
+      // console.log('t', t, tmp[index], index)
     }
     return t
   }
@@ -129,4 +154,20 @@ export function findTaskByIndexPath(task: TCetTask, indexPath: number[]) {
     console.log(e)
     return undefined
   }
+}
+
+/**
+ * 逐层往上找
+ * 找到目标后，查看当前目标是否有下一级
+ * 如果有则返回
+ * 没有，则继续往上找
+ */
+export function findParentTask(rootTask: CetTask, indexPath: number[]) {
+  const targetTask = findTaskByIndexPath(rootTask, indexPath) as TCetTask
+  if (!targetTask)
+    return undefined
+  const nextTask = findTaskByIndexPath(rootTask, targetTask.nextTaskPath)
+  if (nextTask)
+    return nextTask
+  return findParentTask(rootTask, targetTask.indexPath.slice(0, -1))
 }

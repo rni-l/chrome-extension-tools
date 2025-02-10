@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-02-07 23:51:07
+ * @LastEditTime: 2025-02-10 23:13:58
  * @LastEditors: Lu
  * @Description:
  */
@@ -42,6 +42,8 @@ import {
   testData13Result,
   testData14,
   testData14Result,
+  testData21,
+  testData21Result,
 } from './test-data'
 
 /**
@@ -243,6 +245,11 @@ describe('工作流：Actuator', () => {
       const ins = new CetActuator(testData2)
       const logs = await ins.run()
       expect(logs).toMatchObject(testData2Result)
+    })
+    it('三级嵌套循环', async () => {
+      const ins = new CetActuator(testData21)
+      const logs = await ins.run()
+      expect(logs).toMatchObject(testData21Result)
     })
   })
 })
