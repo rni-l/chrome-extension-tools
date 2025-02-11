@@ -7,5 +7,6 @@ export default antfu(
     rules: {
       'no-console': 0,
     },
+    ignores: ['src/*'],
   },
 )
