@@ -5,7 +5,6 @@ import Vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import VueMacros from 'unplugin-vue-macros/vite'
-import { VueRouterAutoImports } from 'unplugin-vue-router'
 import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 
@@ -38,11 +37,6 @@ export default defineConfig({
       imports: [
         'vue',
         '@vueuse/core',
-        VueRouterAutoImports,
-        {
-          // add any other imports you were relying on
-          'vue-router/auto': ['useLink'],
-        },
       ],
       dts: true,
       dirs: [
@@ -65,5 +59,16 @@ export default defineConfig({
     // resolve: {
     //   mainFields: ['module']
     // }
+  },
+
+  build: {
+    lib: {
+      entry: path.resolve(__dirname, 'package/main.ts'),
+      name: 'cet',
+      // the proper extensions will be added
+      fileName: 'index',
+    },
+    rollupOptions: {
+    },
   },
 })

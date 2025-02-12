@@ -7,8 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+<<<<<<< Updated upstream
     TheCounter: typeof import('./components/TheCounter.vue')['default']
     TheFooter: typeof import('./components/TheFooter.vue')['default']
     TheInput: typeof import('./components/TheInput.vue')['default']
+=======
+    SharedSubtitle: typeof import('./components/SharedSubtitle.vue')['default']
+>>>>>>> Stashed changes
   }
 }

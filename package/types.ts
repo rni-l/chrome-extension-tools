@@ -1,10 +1,12 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-02-08 23:09:31
+ * @LastEditTime: 2025-02-11 00:10:16
  * @LastEditors: Lu
  * @Description:
  */
+
+/* workflow */
 export interface CetLoopDataItem {
   name: string
   value: string | number | symbol
@@ -93,4 +95,29 @@ export interface CetTaskRunOptions {
   logItem: CetActuatorResultItem | undefined
   currentLoopData?: CetLoopDataItem
   currentLoopIndex?: number
+}
+
+/*  message */
+export interface CetMsgItem<T = any> {
+  type: string
+  data: T
+  tabId?: number
+  isToSP?: boolean
+  isToCS?: boolean
+}
+
+export type CetMsgCb<T = any> = (data: CetMsgItem<T>, tabId?: number) => Promise<any>
+
+export interface CetMsgItemCache {
+  bgName: string
+  csName: string
+  spName: string
+  name: string
+  tabIdList: { tabId: number, cb: CetMsgCb }[]
+  spCb?: CetMsgCb
+  bgCb?: CetMsgCb
+}
+
+export interface CetMsgDestination {
+  tabId?: number
 }

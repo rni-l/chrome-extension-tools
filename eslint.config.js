@@ -6,6 +6,7 @@ export default antfu(
     formatters: true,
     rules: {
       'no-console': 0,
+      'ts/ban-ts-comment': 0,
     },
     ignores: ['src/*'],
   },
