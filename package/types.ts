@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-02-11 00:10:16
+ * @LastEditTime: 2025-02-12 18:05:19
  * @LastEditors: Lu
  * @Description:
  */
@@ -25,16 +25,22 @@ export interface CetCommonParams {
   currentLoopIndex?: number
   retryNumber?: number
   skipCsCallbackError?: boolean
+  name: string
 }
 
 export interface CsFnParams extends CetCommonParams {
   spBeforeFnResult?: CetSpFnResult<any>
   csRetryNumber?: number
+  tabId: number
 }
-export interface CetCsFnResult<T = any> {
+export interface CetCsFnResult<T = unknown> {
   next: boolean
   data?: T
   retryTarget?: string
+  tabId?: number
+  tabUrl?: string
+}
+export interface CetCsFnResultInCs<T = unknown> extends CetCsFnResult<T> {
   tabId?: number
   tabUrl?: string
 }
@@ -48,14 +54,19 @@ export interface CetSpFnResult<T = any> {
   retryTarget?: string
 }
 
-export interface CetSpBeforeFn {
-  (params: CetSpBeforeFnParams): Promise<CetSpFnResult<any>>
+export interface CetSpBeforeFn<T = unknown> {
+  (params: CetSpBeforeFnParams): Promise<CetSpFnResult<T>>
 }
-export interface CetSpAfterFn {
-  (params: CetSpAfterFnParams): Promise<CetSpFnResult<any>>
+export interface CetSpAfterFn<T = unknown> {
+  (params: CetSpAfterFnParams): Promise<CetSpFnResult<T>>
 }
-export interface CetCsFn {
-  (params: CsFnParams): Promise<CetCsFnResult<any>>
+// 用户在配置中定义的 csFn
+export interface CetCsFn<T = unknown> {
+  (params: CsFnParams): Promise<CetCsFnResult<T>>
+}
+// 在 content script 执行的 csFn 返回值
+export interface CetCsFnInCs<T = unknown> {
+  (params: CsFnParams): Promise<CetCsFnResultInCs<T>>
 }
 
 export interface CetWorkFlowConfigure {
@@ -98,26 +109,28 @@ export interface CetTaskRunOptions {
 }
 
 /*  message */
-export interface CetMsgItem<T = any> {
-  type: string
+// content script message 的参数和返回值
+export interface CetCSMessageParams<T = unknown> {
   data: T
-  tabId?: number
-  isToSP?: boolean
-  isToCS?: boolean
+}
+export interface CetCSMessageReturnData<T = unknown> {
+  data: T
+  tabId: number
 }
 
-export type CetMsgCb<T = any> = (data: CetMsgItem<T>, tabId?: number) => Promise<any>
-
-export interface CetMsgItemCache {
-  bgName: string
-  csName: string
-  spName: string
-  name: string
-  tabIdList: { tabId: number, cb: CetMsgCb }[]
-  spCb?: CetMsgCb
-  bgCb?: CetMsgCb
+// background message 的参数和返回值
+export interface CetBGMessageParams<T = unknown> {
+  data: T
 }
 
-export interface CetMsgDestination {
-  tabId?: number
+export interface CetBGMessageReturnData<T = unknown> {
+  data: T
+}
+
+// sp message 的参数和返回值
+export interface CetSPMessageParams<T = unknown> {
+  data: T
+}
+export interface CetSPMessageReturnData<T = unknown> {
+  data: T
 }

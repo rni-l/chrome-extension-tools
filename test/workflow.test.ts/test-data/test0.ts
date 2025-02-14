@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-05 15:38:22
- * @LastEditTime: 2025-02-06 23:34:55
+ * @LastEditTime: 2025-02-13 10:32:14
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorResultItem, CetWorkFlowConfigure } from 'package/types'
+import type { CetActuatorResultItem, CetWorkFlowConfigure } from '../../../package/types'
 import { omit } from 'lodash-es'
 import { tabId1, tabUrl1 } from './common'
 

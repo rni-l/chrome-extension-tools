@@ -1,13 +1,23 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-02-10 17:49:14
+ * @LastEditTime: 2025-02-14 21:59:12
  * @LastEditors: Lu
  * @Description:
  */
 
-import type { CetActuatorCache, CetCommonParams, CetCsFnResult, CetLoopDataItem, CetSpFnResult, CetTaskRunOptions, CetWorkFlowConfigure } from 'package/types'
-import { isExist, loopCheck } from 'package/utils'
+import type {
+  CetActuatorCache,
+  CetCommonParams,
+  CetCsFnResult,
+  CetLoopDataItem,
+  CetSpFnResult,
+  CetTaskRunOptions,
+  CetWorkFlowConfigure,
+} from '../types'
+import { sendMessage } from 'webext-bridge/popup'
+import { EVENTS } from '../constants'
+import { isExist, loopCheck } from '../utils'
 
 function getCommonSpResult(): CetSpFnResult {
   return {
@@ -27,6 +37,7 @@ interface ICheckOptions {
 export class CetTask {
   configure: CetWorkFlowConfigure
   name = ''
+  tabId = 0
   children: CetTask[] = []
   indexPath: number[] = []
   level = 0
@@ -55,6 +66,10 @@ export class CetTask {
     this.parentLoopData = checkOptions.parentLoopData || []
   }
 
+  setTabId(tabId: number) {
+    this.tabId = tabId
+  }
+
   appendChildren(children: CetTask[]) {
     this.children = children
     this.hasChildren = children.length > 0
@@ -66,7 +81,7 @@ export class CetTask {
       name: configure.name,
       success: false,
     }
-    const commonParams: CetCommonParams = { isFirstLevel: true }
+    const commonParams: CetCommonParams = { isFirstLevel: true, name: this.name }
     if (currentCache.isRetry && currentCache.currentRetryNumber > 0) {
       commonParams.retryNumber = currentCache.currentRetryNumber
     }
@@ -84,12 +99,12 @@ export class CetTask {
     let csResult: CetCsFnResult = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        // TODO: 切换成消息通知的模式
-        csResult = await configure.csFn!({
+        csResult = await sendMessage(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
-        })
+          tabId: this.tabId,
+        }, 'background')
         return csResult.next
       }, (configure.csRetryNumber || 0) + 1, configure.csRetryInterval || 1000)
     }
