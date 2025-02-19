@@ -8,24 +8,24 @@ import App from './views/App.vue'
   console.info('[vitesse-webext] Hello world from content script')
 
   // communication example: send previous tab title from background page
-  onMessage('tab-prev', async ({ data }: any) => {
-    console.log(`[vitesse-webext] Navigate from page "${data.title}"`)
-    console.log(data.tabId)
-    const res = await sendMessage('cs2sp', {
-      message: 'hello from content-script',
-      tabId: data.tabId,
-    }, 'background')
-    console.log(res)
-  })
-  onMessage('sp2cs', (data: any) => {
-    console.log(data)
-    return 'ok'
-  })
-  const response = await sendMessage('cs2sv', {
-    first_name: 'John',
-    last_name: 'Doe',
-  }, 'background')
-  console.log('background response:', response)
+  // onMessage('tab-prev', async ({ data }: any) => {
+  //   console.log(`[vitesse-webext] Navigate from page "${data.title}"`)
+  //   console.log(data.tabId)
+  //   const res = await sendMessage('cs2sp', {
+  //     message: 'hello from content-script',
+  //     tabId: data.tabId,
+  //   }, 'background')
+  //   console.log(res)
+  // })
+  // onMessage('sp2cs', (data: any) => {
+  //   console.log(data)
+  //   return 'ok'
+  // })
+  // const response = await sendMessage('cs2sv', {
+  //   first_name: 'John',
+  //   last_name: 'Doe',
+  // }, 'background')
+  // console.log('background response:', response)
 
   // mount component to context window
   const container = document.createElement('div')

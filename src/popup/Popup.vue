@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMessage, sendMessage } from "webext-bridge/popup";
+import { CetActuator } from "../../package/workflow";
+import { task1Configure } from "../configure/task1";
 
 // const sendToBackground = async () => {
 //     const res = await sendMessage("sp2sv", {
@@ -12,8 +13,10 @@ import { onMessage, sendMessage } from "webext-bridge/popup";
 //     console.log('service message', message)
 //     return 'ok'
 // })
-function start() {
-  chrome.runtime.openOptionsPage()
+async function start() {
+  const ins = new CetActuator(task1Configure)
+  const result = await ins.run()
+  console.log(result)
 }
 </script>
 

@@ -40,6 +40,7 @@ export async function getManifest() {
       'activeTab',
       'sidePanel',
       'popup',
+      'nativeMessaging'
     ],
     host_permissions: ['*://*/*'],
     content_scripts: [

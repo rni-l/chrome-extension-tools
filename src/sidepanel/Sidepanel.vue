@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { storageDemo } from '~/logic/storage'
+import { CetActuator } from "../../package/workflow";
+import { task1Configure } from "../configure/task1";
 import { onMessage, sendMessage } from "webext-bridge/popup";
 
 const sendToBackground = async () => {
@@ -30,22 +31,18 @@ onMessage('cs2sp', (data: any) => {
 //   console.log('service message', message)
 //   return 'ok'
 // })
-function openOptionsPage() {
-  browser.runtime.openOptionsPage()
+async function start() {
+  const ins = new CetActuator(task1Configure)
+  console.log(ins, task1Configure)
+  const result = await ins.run()
+  console.log(result)
 }
 </script>
 
 <template>
   <main class="w-full px-4 py-5 text-center text-gray-700">
-    <Logo />
-    <div @click="sendToBackground">Sidepanel</div>
-    <SharedSubtitle />
-
-    <button class="btn mt-2" @click="openOptionsPage">
-      Open Options
+    <button class="btn mt-2" @click="start">
+      开始任务
     </button>
-    <div class="mt-2">
-      <span class="opacity-50">Storage:</span> {{ storageDemo }}
-    </div>
   </main>
 </template>

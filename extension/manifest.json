@@ -23,7 +23,8 @@
     "storage",
     "activeTab",
     "sidePanel",
-    "popup"
+    "popup",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "*://*/*"

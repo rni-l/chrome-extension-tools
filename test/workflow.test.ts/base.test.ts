@@ -8,6 +8,7 @@
 
 import type { CetCsFn, CetWorkFlowConfigure } from '../../package/types'
 import { describe, expect, it, vi } from 'vitest'
+import { findDeepTargetByName } from '../../package/utils'
 import { CetActuator } from '../../package/workflow'
 import {
   getTestData03,
@@ -48,27 +49,11 @@ import {
   testData21Result,
 } from './test-data'
 
-function findDeepTarget(configures: CetWorkFlowConfigure[], name: string) {
-  let res: CetWorkFlowConfigure | undefined
-  for (const item of configures) {
-    if (item.name === name) {
-      res = item
-      break
-    }
-    if (item.children) {
-      res = findDeepTarget(item.children, name)
-      if (res)
-        break
-    }
-  }
-  return res
-}
-
 let targetData: CetWorkFlowConfigure[] = []
 vi.mock('webext-bridge/popup', () => {
   return {
     sendMessage: vi.fn().mockImplementation(async (event, data: Parameters<CetCsFn>[0]) => {
-      const target = findDeepTarget(targetData, data.name)
+      const target = findDeepTargetByName(targetData, data.name)
       if (!target)
         throw new Error('target not found')
       if (!target.csFn) {

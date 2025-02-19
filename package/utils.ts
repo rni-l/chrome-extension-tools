@@ -1,7 +1,9 @@
+import type { CetWorkFlowConfigure } from './types'
+
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-02-10 23:11:05
+ * @LastEditTime: 2025-02-15 00:37:43
  * @LastEditors: Lu
  * @Description:
  */
@@ -53,4 +55,20 @@ export class SimpleStack {
   isEmpty() {
     return this.stack.length === 0
   }
+}
+
+export function findDeepTargetByName(configures: CetWorkFlowConfigure[], name: string) {
+  let res: CetWorkFlowConfigure | undefined
+  for (const item of configures) {
+    if (item.name === name) {
+      res = item
+      break
+    }
+    if (item.children) {
+      res = findDeepTargetByName(item.children, name)
+      if (res)
+        break
+    }
+  }
+  return res
 }
