@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-02-12 18:05:19
+ * @LastEditTime: 2025-02-20 23:39:10
  * @LastEditors: Lu
  * @Description:
  */
@@ -109,6 +109,27 @@ export interface CetTaskRunOptions {
 }
 
 /*  message */
+export type CetDestination = 'cs' | 'sp' | 'bg'
+export interface CetDestinationOption {
+  tabId?: number
+}
+export type CetMessageCallback<T = unknown> = (data: T) => Promise<void>
+export type CetMessageCsCallback<T = unknown> = (data: T, tabId: number) => Promise<void>
+export interface CetMessageEventItem {
+  messageId: string
+  tabIdList: { tabId: number, csCallback?: CetMessageCsCallback }[]
+  spCallback?: CetMessageCallback
+  csCallback?: CetMessageCsCallback
+  bgCallback?: CetMessageCallback
+}
+export interface CetMessageItem<T = unknown> {
+  messageId: string
+  data?: T
+  tabId?: number
+  isToSP?: boolean
+  isToCS?: boolean
+  destination?: CetDestination
+}
 // content script message 的参数和返回值
 export interface CetCSMessageParams<T = unknown> {
   data: T
