@@ -1,8 +1,7 @@
 import { createApp } from 'vue'
-import { onMessage, sendMessage } from 'webext-bridge/content-script'
 import { setupApp } from '~/logic/common-setup'
 import App from './views/App.vue'
-
+import { initCSMsgListener } from '../../package/message'
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (async () => {
   console.info('[vitesse-webext] Hello world from content script')
@@ -28,6 +27,7 @@ import App from './views/App.vue'
   // console.log('background response:', response)
 
   // mount component to context window
+  initCSMsgListener()
   const container = document.createElement('div')
   container.id = __NAME__
   const root = document.createElement('div')

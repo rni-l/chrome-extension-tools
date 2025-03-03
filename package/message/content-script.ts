@@ -1,12 +1,20 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-02-20 23:42:03
+ * @LastEditTime: 2025-03-04 10:37:59
  * @LastEditors: Lu
  * @Description:
  */
 
-import type { CetMessageCsCallback, CetMessageEventItem, CetMessageItem } from '../types'
+import type {
+  CetDestinationOption,
+  CetMessageCallbackResult,
+  CetMessageCsCallback,
+  CetMessageEventItem,
+  CetMessageItem,
+  CetMessageSendResult,
+} from '../types'
+import { configures } from '../constants'
 
 const messageList: CetMessageEventItem[] = []
 
@@ -14,28 +22,34 @@ export function initCSMsgListener() {
   console.log('initCSMsgListener')
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem, sender, sendResponse) => {
+      if (configures.debug) {
+        console.log('cs', message)
+      }
       if (Object.prototype.toString.call(message) !== '[object Object]' || !message.messageId) {
         // 不是属于内置定义的 message，不处理
         return true
       }
       const item = messageList.find(v => v.messageId === message.messageId)
-      if (!item) {
+      if (!item || !item.csCallback) {
         console.warn('没有监听相关事件')
         return true
       }
-      if (item) {
-        const tabItem = item.tabIdList?.find(v => v.tabId === message.tabId)
-        if (tabItem && tabItem.csCallback && message.tabId) {
-          tabItem.csCallback(message, message.tabId).then((res) => {
-            sendResponse({
-              data: res,
-              tabId: message.tabId,
-            })
+      if (item && item.csCallback) {
+        item.csCallback(message.data, {
+          option: message.option,
+          messageId: message.messageId,
+        }).then((res) => {
+          sendResponse({
+            data: res,
+            success: true,
           })
-        }
-        else {
-          return false
-        }
+        }).catch((err) => {
+          sendResponse({
+            data: undefined,
+            success: false,
+            msg: err.message,
+          })
+        })
       }
       else {
         return false
@@ -45,32 +59,40 @@ export function initCSMsgListener() {
     },
   )
 }
-export function sendMsgByCS<T = unknown>(type: string, data: any, tabId?: number, isToSP?: boolean): Promise<CetMessageItem<T>> {
+export function sendMsgByCS<T = unknown, R = unknown>(
+  messageId: string,
+  data: T,
+  option: CetDestinationOption,
+): Promise<CetMessageSendResult<R>> {
   return new Promise((res) => {
-    chrome.runtime.sendMessage({ type, data, tabId, isToSP }, {}, (response: CetMessageItem) => {
-      res(response as CetMessageItem<T>)
+    if (configures.debug) {
+      console.log('cs sendMsgByCS', messageId, data, option)
+    }
+    chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
+      if (configures.debug) {
+        console.log('cs sendMsgByCS', response)
+      }
+      res({
+        data: response?.data as R,
+        tabId: option.tabId,
+        tabUrl: option.tabUrl,
+        messageId,
+        success: response?.success || false,
+        msg: response?.msg,
+      })
     })
   })
 }
-export function onMsgInCS<T = unknown>(messageId: string, tabId: number, csCallback: CetMessageCsCallback<T>) {
+export function onMsgInCS<T = unknown>(messageId: string, csCallback: CetMessageCsCallback<T>, tabId?: number) {
   const item = messageList.find(v => v.messageId === messageId)
   if (!item) {
     messageList.push({
       messageId,
-      tabIdList: [{
-        tabId,
-        csCallback: csCallback as CetMessageCsCallback<unknown>,
-      }],
+      csCallback: csCallback as CetMessageCsCallback<unknown>,
     })
   }
   else {
-    const tabItem = item.tabIdList.find(v => v.tabId === tabId)
-    if (tabItem) {
-      item.csCallback = csCallback as CetMessageCsCallback<unknown>
-    }
-    else {
-      item.tabIdList.push({ tabId, csCallback: csCallback as CetMessageCsCallback<unknown> })
-    }
+    item.csCallback = csCallback as CetMessageCsCallback<unknown>
   }
   return true
 }

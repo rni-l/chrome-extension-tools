@@ -54,7 +54,10 @@ export default defineConfig({
   // https://github.com/vitest-dev/vitest
   test: {
     environment: 'jsdom',
-    reporters: ['verbose'],
+    // reporters: ['verbose'],
+    reporters: [
+      'html',
+    ],
     // setupFiles: './vitest.init.mjs',
     // resolve: {
     //   mainFields: ['module']

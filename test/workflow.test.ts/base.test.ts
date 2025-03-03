@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-02-14 22:15:31
+ * @LastEditTime: 2025-03-04 10:34:46
  * @LastEditors: Lu
  * @Description: ok
  */
@@ -50,9 +50,9 @@ import {
 } from './test-data'
 
 let targetData: CetWorkFlowConfigure[] = []
-vi.mock('webext-bridge/popup', () => {
+vi.mock('../../package/message', () => {
   return {
-    sendMessage: vi.fn().mockImplementation(async (event, data: Parameters<CetCsFn>[0]) => {
+    sendMsgByBG: vi.fn().mockImplementation(async (event, data: Parameters<CetCsFn>[0]) => {
       const target = findDeepTargetByName(targetData, data.name)
       if (!target)
         throw new Error('target not found')
@@ -61,23 +61,11 @@ vi.mock('webext-bridge/popup', () => {
         return { next: true, tabId: tabId1, tabUrl: tabUrl1 }
       }
       const res = await target.csFn(data)
-      return { next: !!res.next, data: res.data, tabId: tabId1, tabUrl: tabUrl1 }
+      return { success: !!res.next, data: res.data, tabId: tabId1, tabUrl: tabUrl1 }
     }),
   }
 })
-vi.mock('webext-bridge/background', () => {
-  return {
-    sendMessage: async () => ({}),
-    // eslint-disable-next-line unused-imports/no-unused-vars
-    onMessage: (key: string, val: any) => {},
-  }
-})
-/**
- * 需要模拟浏览器插件的执行方式，csFn 和 spFn 的上下文不一样，内存不是共用的
- */
-// describe('d', () => {
-//   it('ok')
-// })
+
 describe('工作流：Actuator', () => {
   describe('前置校验', () => {
     it('name 不能有重复', async () => {
@@ -85,7 +73,8 @@ describe('工作流：Actuator', () => {
         testData0[0],
         testData0[0],
       ])
-      expect(() => ins.run()).rejects.toThrowError('name 不能重复')
+      const p = () => ins.run()
+      await expect(p).rejects.toThrowError('name 不能重复')
     })
     it('两层级，name 不能有重复', async () => {
       const ins = new CetActuator([
@@ -96,7 +85,8 @@ describe('工作流：Actuator', () => {
           ],
         },
       ])
-      expect(() => ins.run()).rejects.toThrowError('name 不能重复')
+      const p = () => ins.run()
+      await expect(p).rejects.toThrowError('name 不能重复')
     })
     it('多层级，name 不能有重复', async () => {
       const ins = new CetActuator([
@@ -113,7 +103,8 @@ describe('工作流：Actuator', () => {
           ],
         },
       ])
-      expect(() => ins.run()).rejects.toThrowError('name 不能重复')
+      const p = () => ins.run()
+      await expect(p).rejects.toThrowError('name 不能重复')
     })
   })
 

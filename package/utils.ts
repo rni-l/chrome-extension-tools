@@ -1,12 +1,12 @@
-import type { CetWorkFlowConfigure } from './types'
-
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-02-15 00:37:43
+ * @LastEditTime: 2025-03-03 17:09:03
  * @LastEditors: Lu
  * @Description:
  */
+import type { CetWorkFlowConfigure } from './types'
+
 export function asyncSetTimeout(time = 1000) {
   return new Promise(resolve => setTimeout(resolve, time))
 }

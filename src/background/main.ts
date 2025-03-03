@@ -1,6 +1,7 @@
-import { onMessage, sendMessage } from 'webext-bridge/background'
+
 import { initService } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
+import { initBGMsgListener, onMsgInBG } from '../../package/message';
 // only on dev mode
 if (import.meta.hot) {
   // @ts-expect-error for background HMR
@@ -87,46 +88,20 @@ chrome.tabs.onReplaced.addListener((newTabId, oldTabId) => {
   curTabId = newTabId
 })
 
-// onMessage('get-current-tab', async () => {
-//   try {
-//     const tab = await chrome.tabs.get(previousTabId)
-//     return {
-//       title: tab?.title,
-//     }
-//   }
-//   catch {
-//     return {
-//       title: undefined,
-//     }
-//   }
+// onMessage(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
+//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+//   return tabs[0]
 // })
-// onMessage('cs2sv', async ({ data }) => {
-//   console.log('cs2sv', data)
-//   return 'ok'
+// onMessage(EVENTS.CS2BG_GET_CURRENT_TAB, async () => {
+//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+//   return tabs[0]
 // })
-// onMessage('sp2sv', async (data) => {
-//   console.log(data)
-//   return 'ok'
+// onMsgInBG(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
+//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+//   return tabs[0]
 // })
-// onMessage('cs2sp', async (data: any) => {
-//   console.log('cs2sp', data)
-//   const r = await sendMessage('cs2sp', { tabId: data.tabId }, 'popup')
-//   return r
-// })
-
-// onMessage(EVENTS.SP2CS_EXECUTE_TASK, async ({ data }: any) => {
-//   const res = await sendMessage(EVENTS.SP2CS_EXECUTE_TASK, data, {
-//     context: 'content-script',
-//     tabId: data.tabId,
-//   })
-//   return res
-// })
-onMessage(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-  return tabs[0]
-})
-onMessage(EVENTS.CS2BG_GET_CURRENT_TAB, async () => {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-  return tabs[0]
-})
-initService(onMessage, sendMessage)
+onMsgInBG('to-cs', async () => undefined)
+onMsgInBG('test3', async () => undefined)
+onMsgInBG('task1', async () => undefined)
+initBGMsgListener()
+initService()

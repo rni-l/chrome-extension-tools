@@ -1,26 +1,76 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-02-20 23:35:53
+ * @LastEditTime: 2025-03-03 17:04:45
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetDestination, CetDestinationOption, CetMessageCallback, CetMessageEventItem, CetMessageItem } from '../types'
+import type {
+  CetDestinationOption,
+  CetMessageCallback,
+  CetMessageCallbackResult,
+  CetMessageEventItem,
+  CetMessageItem,
+  CetMessageSendResult,
+} from '../types'
+import { configures } from '../constants'
+import { CetDestination } from '../types'
 
 const messageList: CetMessageEventItem[] = []
 
-export function sendMsgByBG<T = unknown>(messageId: string, data: T, destination?: CetDestination, option?: CetDestinationOption) {
+export function sendMsgByBG<T = unknown, R = unknown>(
+  messageId: string,
+  data: T,
+  option: CetDestinationOption,
+): Promise<CetMessageSendResult<R>> {
+  if (!option) {
+    throw new Error('option is required')
+  }
+  if (configures.debug) {
+    console.log('stat sendMsgByBG', messageId, data, option)
+  }
   return new Promise((res) => {
-    chrome.runtime.sendMessage({
-      messageId,
-      data,
-      destination,
-      tabId: option?.tabId,
-      isToSP: destination === 'sp',
-      isToCS: destination === 'cs',
-    } as CetMessageItem<T>, (response: CetMessageItem) => {
-      res(response)
-    })
+    if (option.destination === CetDestination.CS) {
+      if (!option.tabId) {
+        console.error('tabId is required')
+        return
+      }
+      // 发送给 content script 只能使用 chrome.tabs.sendMessage
+      chrome.tabs.sendMessage(option.tabId, {
+        messageId,
+        data,
+        option,
+      } as CetMessageItem<T>, (response: CetMessageCallbackResult<R>) => {
+        if (configures.debug) {
+          console.log('sendMsgByBG response2', response)
+        }
+        res({
+          data: response?.data as R,
+          messageId,
+          tabId: option.tabId,
+          success: response?.success || false,
+          msg: response?.msg,
+        })
+      })
+    }
+    else {
+      chrome.runtime.sendMessage({
+        messageId,
+        data,
+        option,
+      } as CetMessageItem<T>, (response: CetMessageCallbackResult<R>) => {
+        if (configures.debug) {
+          console.log('sendMsgByBG response', response)
+        }
+        res({
+          data: response?.data as R,
+          messageId,
+          tabId: option.tabId,
+          success: response?.success || false,
+          msg: response?.msg,
+        })
+      })
+    }
   })
 }
 export function onMsgInBG<T = unknown>(name: string, cb: CetMessageCallback<T>) {
@@ -28,7 +78,6 @@ export function onMsgInBG<T = unknown>(name: string, cb: CetMessageCallback<T>) 
   if (!item) {
     messageList.push({
       messageId: name,
-      tabIdList: [],
       bgCallback: cb as CetMessageCallback<unknown>,
     })
   }
@@ -41,40 +90,48 @@ export function onMsgInBG<T = unknown>(name: string, cb: CetMessageCallback<T>) 
 export function initBGMsgListener() {
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem | any, sender, sendResponse) => {
+      if (configures.debug) {
+        console.log('bg receive', message, sender)
+      }
       if (Object.prototype.toString.call(message) !== '[object Object]' || !message.messageId) {
         // 不是属于内置定义的 message，不处理
         return true
       }
-      const item = messageList.find(v => v.messageId === message.messageId)
+      const msg = message as CetMessageItem
+      const item = messageList.find(v => v.messageId === msg.messageId)
       if (!item) {
         console.warn('没有监听相关事件')
         return true
       }
-      if (message.isToSP) {
+      if (msg.option.destination === CetDestination.SP) {
         // 如果是发送给 sp，则不触发 background
-        sendMsgByBG(item.messageId, message.data, 'sp', { tabId: message.tabId }).then((t) => {
-          sendResponse({
-            data: t,
-          })
-        })
         return true
       }
-      if (message.isToCS) {
-        if (message.tabId) {
-          chrome.tabs.sendMessage(message.tabId, message, (response) => {
-            sendResponse(response)
-          })
+      else if (msg.option.destination === CetDestination.CS) {
+        if (msg.option.tabId) {
+          sendMsgByBG(item.messageId, msg.data, msg.option)
+            .then((res) => {
+              if (configures.debug) {
+                console.log('sendMsgByBG response(cs)', res)
+              }
+              sendResponse({ data: res, success: true })
+            })
         }
         else {
           console.warn('没有 tabId，不给 content script 发送消息')
+          sendResponse({ msg: 'not have tabId', success: false })
           return false
         }
       }
       else if (item.bgCallback) {
-        item.bgCallback(message).then((res) => {
-          sendResponse({
-            data: res,
-          })
+        item.bgCallback(msg.data, {
+          option: msg.option,
+          messageId: msg.messageId,
+        }).then((res) => {
+          sendResponse({ data: res, success: true })
+        }).catch((err) => {
+          console.error('bgCallback error', err)
+          sendResponse({ data: undefined, msg: err.message, success: false })
         })
       }
       else {

@@ -1,41 +1,50 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-02-19 23:38:23
+ * @LastEditTime: 2025-03-03 17:23:44
  * @LastEditors: Lu
  * @Description:
  */
-import { EVENTS } from '../constants'
+
+import { configures, EVENTS } from '../constants'
+import { onMsgInBG } from '../message'
 
 export * from './actuator'
 
-export function initService(onMessage: any, sendMessage: any) {
-  console.log('onMessage')
-  console.log(onMessage)
-  onMessage(EVENTS.SP2CS_EXECUTE_TASK, async ({ data }: any) => {
-    const res = await sendMessage(EVENTS.SP2CS_EXECUTE_TASK, data, {
-      context: 'content-script',
-      tabId: data.tabId,
-    })
-    return res
-  })
-  onMessage(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
+export function initService() {
+  if (configures.debug) {
+    console.log('initService')
+  }
+  onMsgInBG<chrome.tabs.Tab>(EVENTS.SP2BG_GET_CURRENT_TAB, async (data, params) => {
+    if (configures.debug) {
+      console.log('bg SP2BG_GET_CURRENT_TAB', data, params)
+    }
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (configures.debug) {
+      console.log('bg SP2BG_GET_CURRENT_TAB', tabs)
+    }
     return tabs[0]
   })
-  onMessage(EVENTS.CS2BG_GET_CURRENT_TAB, async () => {
+  onMsgInBG<chrome.tabs.Tab>(EVENTS.CS2BG_GET_CURRENT_TAB, async (data, params) => {
+    if (configures.debug) {
+      console.log('bg CS2BG_GET_CURRENT_TAB', data, params)
+    }
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (configures.debug) {
+      console.log('bg CS2BG_GET_CURRENT_TAB', tabs)
+    }
     return tabs[0]
   })
 }
 
-// export function initContentScript() {
-//   onMessage(EVENTS.SP2CS_EXECUTE_TASK, async ({ data }) => {
-//     const csFn = configure.csFn
+// export function initContentScript(configures: CetWorkFlowConfigure[]) {
+//   onMsgInCS(EVENTS.SP2CS_EXECUTE_TASK, async (res) => {
+//     const csFn = configures.find(v => v.name === res.name)?.csFn
 //     if (csFn) {
-//       const csResult = await csFn(data)
+//       const csResult = await csFn(res)
 //       return csResult
-//     } else {
+//     }
+//     else {
 //       return { next: true }
 //     }
 //   })

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-02-14 21:59:12
+ * @LastEditTime: 2025-03-04 10:33:41
  * @LastEditors: Lu
  * @Description:
  */
@@ -14,9 +14,11 @@ import type {
   CetSpFnResult,
   CetTaskRunOptions,
   CetWorkFlowConfigure,
+  CsFnParams,
 } from '../types'
-import { sendMessage } from 'webext-bridge/popup'
 import { EVENTS } from '../constants'
+import { sendMsgByBG } from '../message'
+import { CetDestination } from '../types'
 import { isExist, loopCheck } from '../utils'
 
 function getCommonSpResult(): CetSpFnResult {
@@ -96,15 +98,23 @@ export class CetTask {
     if (!spBeforeResult || !spBeforeResult.next) {
       return false
     }
-    let csResult: CetCsFnResult = getCommonCsResult()
+    const csResult: CetCsFnResult = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        csResult = await sendMessage(EVENTS.SP2CS_EXECUTE_TASK, {
+        const msgResult = await sendMsgByBG<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
           tabId: this.tabId,
-        }, 'background')
+        }, {
+          destination: CetDestination.BG,
+          tabId: this.tabId,
+        })
+        csResult.tabId = msgResult.tabId
+        // TODO：获取 tabUrl
+        csResult.tabUrl = msgResult.tabUrl
+        csResult.data = msgResult.data
+        csResult.next = msgResult.success
         return csResult.next
       }, (configure.csRetryNumber || 0) + 1, configure.csRetryInterval || 1000)
     }
