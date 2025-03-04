@@ -38,7 +38,6 @@ export async function getManifest() {
       'storage',
       'activeTab',
       'sidePanel',
-      'popup',
       'nativeMessaging',
       'scripting',
     ],

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-04 11:24:46
+ * @LastEditTime: 2025-03-04 17:49:48
  * @LastEditors: Lu
  * @Description:
  */
@@ -185,4 +185,38 @@ export interface CetSPMessageParams<T = unknown> {
 }
 export interface CetSPMessageReturnData<T = unknown> {
   data: T
+}
+
+/**
+ * logger 的参数类型
+ */
+
+export enum CetLogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error',
+}
+
+export interface CetLogOptions {
+  level?: CetLogLevel
+  timestamp?: boolean
+  prefix?: string
+  color?: boolean
+  maxCacheSize?: number // 最大缓存数量
+  isSyncToBG?: boolean
+  isSyncToSP?: boolean
+  isCS?: boolean
+  isSP?: boolean
+  isShowInConsole?: boolean
+}
+
+export interface CetLogEntry {
+  timestamp: string
+  level: CetLogLevel
+  message: string
+  args: any[]
+  isSyncToBG?: boolean
+  isSyncToSP?: boolean
+  isCS?: boolean
 }

@@ -23,7 +23,6 @@
     "storage",
     "activeTab",
     "sidePanel",
-    "popup",
     "nativeMessaging",
     "scripting"
   ],
