@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-04 10:33:41
+ * @LastEditTime: 2025-03-04 11:18:52
  * @LastEditors: Lu
  * @Description:
  */
@@ -17,7 +17,7 @@ import type {
   CsFnParams,
 } from '../types'
 import { EVENTS } from '../constants'
-import { sendMsgByBG } from '../message'
+import { sendMsgBySP } from '../message'
 import { CetDestination } from '../types'
 import { isExist, loopCheck } from '../utils'
 
@@ -101,15 +101,16 @@ export class CetTask {
     const csResult: CetCsFnResult = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        const msgResult = await sendMsgByBG<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
+        const msgResult = await sendMsgBySP<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
           tabId: this.tabId,
         }, {
-          destination: CetDestination.BG,
+          destination: CetDestination.CS,
           tabId: this.tabId,
         })
+        console.log('msgResult', msgResult)
         csResult.tabId = msgResult.tabId
         // TODO：获取 tabUrl
         csResult.tabUrl = msgResult.tabUrl

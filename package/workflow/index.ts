@@ -1,13 +1,14 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-03-03 17:23:44
+ * @LastEditTime: 2025-03-04 11:13:14
  * @LastEditors: Lu
  * @Description:
  */
 
+import type { CetWorkFlowConfigure, CsFnParams } from '../types'
 import { configures, EVENTS } from '../constants'
-import { onMsgInBG } from '../message'
+import { onMsgInBG, onMsgInCS } from '../message'
 
 export * from './actuator'
 
@@ -37,15 +38,17 @@ export function initService() {
   })
 }
 
-// export function initContentScript(configures: CetWorkFlowConfigure[]) {
-//   onMsgInCS(EVENTS.SP2CS_EXECUTE_TASK, async (res) => {
-//     const csFn = configures.find(v => v.name === res.name)?.csFn
-//     if (csFn) {
-//       const csResult = await csFn(res)
-//       return csResult
-//     }
-//     else {
-//       return { next: true }
-//     }
-//   })
-// }
+export function initContentScript(configures: CetWorkFlowConfigure[]) {
+  console.log('initContentScript')
+  onMsgInCS<CsFnParams>(EVENTS.SP2CS_EXECUTE_TASK, async (res) => {
+    console.log('SP2CS_EXECUTE_TASK', res)
+    const csFn = configures.find(v => v.name === res.name)?.csFn
+    if (csFn) {
+      const csResult = await csFn(res)
+      return csResult
+    }
+    else {
+      return { next: true }
+    }
+  })
+}

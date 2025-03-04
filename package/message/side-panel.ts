@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 22:00:08
- * @LastEditTime: 2025-03-03 17:07:32
+ * @LastEditTime: 2025-03-04 11:07:14
  * @LastEditors: Lu
  * @Description:
  */
@@ -87,6 +87,16 @@ export function sendMsgBySP<T = unknown, R = unknown>(
   return new Promise((res) => {
     if (configures.debug) {
       console.log('sendMsgBySP', messageId, data, option)
+    }
+    if (option.destination === CetDestination.CS && !option.tabId) {
+      console.error('tabId is required')
+      return res({
+        data: undefined,
+        tabId: option.tabId,
+        messageId,
+        success: false,
+        msg: 'tabId is required',
+      })
     }
     chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
       if (configures.debug) {

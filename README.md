@@ -10,7 +10,7 @@
 
 该工作流是需要编写代码来实现相关的业务流程，它只提供流程等相关的基础功能。
 
-以 sidePanel 为中心，根据工作流的配置要求，定义相关的业务流程配置，给到 sidePanel 和 contentScript。由 sidePanel 开始启动工作流，service 作为 sidePanel 和 contentScript 之间的通信桥梁。
+以 sidePanel 为中心，根据工作流的配置要求，定义相关的业务流程配置，给到 sidePanel 和 contentScript。由 sidePanel 开始启动工作流，background 作为 sidePanel 和 contentScript 之间的通信桥梁。
 
 ```text
      +---------------+
@@ -32,7 +32,7 @@
        |                |
        v                |
      +---------------+  |
-     |    service    | -+
+     |    background    | -+
      +---------------+
 ```
 
@@ -100,26 +100,12 @@ const res = await sendMsgBySP('toBg', { ... }, { destination: CetDestination.BG 
 
 ### side panel 发给 content script
 
-首先要在 background 注册同样的事件：
-
-```typescript
-import { onMsgInBG } from 'chrome-extension-tools'
-onMsgInBG('test1', async () => undefined)
-```
-
 Side panel 发给 content script 需要带上 tabId 才能指定发给谁：
 
 ```typescript
 import { sendMsgBySP, CetDestination, EVENTS } from 'chrome-extension-tools'
 const  { data } = await sendMsgBySP(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG });
 const res = await sendMsgBySP('test1', { ... }, { estination: CetDestination.CS, tabId: tabId })
-```
-
-如果想广播给所有的 content script，可以不带上 tabId
-
-```typescript
-import { sendMsgBySP, CetDestination } from 'chrome-extension-tools'
-const res = await sendMsgBySP('test1', { ... }, { estination: CetDestination.CS })
 ```
 
 content script 监听：
@@ -134,7 +120,7 @@ onMsgInCS('test1', async (res) => {
 
 ### content script 发给 background
 
-contetn script 发送给 background，可以不带 tabId
+content script 发送给 background，可以不带 tabId
 
 ```typescript
 import { sendMsgByCS } from 'chrome-extension-tools'

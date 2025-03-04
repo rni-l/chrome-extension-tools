@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-02-12 17:13:21
+ * @LastEditTime: 2025-03-04 11:24:07
  * @LastEditors: Lu
  * @Description:
  */
@@ -97,6 +97,10 @@ export class CetActuator {
         continue
       }
       const cache = actuatorCacheMap[targetTask.name]
+      const tabId = await this.params.getTabId?.(targetTask, cache, options)
+      if (tabId) {
+        targetTask.setTabId(tabId)
+      }
       const result = await targetTask.run(cache, options)
       if (cache.isRetry && !result) {
         cache.currentRetryNumber++
@@ -177,6 +181,7 @@ export class CetActuator {
       targetTask = nextTask
     }
     this.params.callback?.(logs)
+    console.log('end')
     return logs
   }
 }

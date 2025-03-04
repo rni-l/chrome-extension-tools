@@ -52,7 +52,7 @@ import {
 let targetData: CetWorkFlowConfigure[] = []
 vi.mock('../../package/message', () => {
   return {
-    sendMsgByBG: vi.fn().mockImplementation(async (event, data: Parameters<CetCsFn>[0]) => {
+    sendMsgBySP: vi.fn().mockImplementation(async (event, data: Parameters<CetCsFn>[0]) => {
       const target = findDeepTargetByName(targetData, data.name)
       if (!target)
         throw new Error('target not found')

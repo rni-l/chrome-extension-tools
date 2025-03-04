@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CetActuator } from "../../package/workflow";
 import { task1Configure } from "../configure/task1";
-import { EVENTS } from '../../package/constants';
+import { EVENTS, toggleDebug } from '../../package/constants';
 import { onMsgInSP, sendMsgBySP } from "../../package/message";
 import { CetDestination } from "../../package/types";
 const sendToBackground = async () => {
@@ -45,9 +45,16 @@ onMsgInSP('to-sp2', async (data, params) => {
 //   console.log('service message', message)
 //   return 'ok'
 // })
-async function start() {
-  const ins = new CetActuator(task1Configure)
-  console.log(ins, task1Configure)
+async function startTask1() {
+  console.log('startTask1')
+  toggleDebug(true)
+  const  {data} = await sendMsgBySP<undefined, chrome.tabs.Tab>(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG }); 
+  if (!data?.id) return
+  const ins = new CetActuator(task1Configure, {
+    getTabId: async () => {
+      return data.id as number
+    },
+  })
   const result = await ins.run()
   console.log(result)
 }
@@ -60,6 +67,9 @@ async function start() {
     </button>
     <button class="btn mt-2" @click="sendToCS">
       to cs
+    </button>
+    <button class="btn mt-2" @click="startTask1">
+      start task1
     </button>
   </main>
 </template>

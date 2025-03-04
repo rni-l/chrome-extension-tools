@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-03-03 17:04:45
+ * @LastEditTime: 2025-03-04 11:21:49
  * @LastEditors: Lu
  * @Description:
  */
@@ -99,17 +99,14 @@ export function initBGMsgListener() {
       }
       const msg = message as CetMessageItem
       const item = messageList.find(v => v.messageId === msg.messageId)
-      if (!item) {
-        console.warn('没有监听相关事件')
-        return true
-      }
+      // 中转事件，不需要在 background 中处理
       if (msg.option.destination === CetDestination.SP) {
         // 如果是发送给 sp，则不触发 background
         return true
       }
       else if (msg.option.destination === CetDestination.CS) {
         if (msg.option.tabId) {
-          sendMsgByBG(item.messageId, msg.data, msg.option)
+          sendMsgByBG(msg.messageId, msg.data, msg.option)
             .then((res) => {
               if (configures.debug) {
                 console.log('sendMsgByBG response(cs)', res)
@@ -123,7 +120,7 @@ export function initBGMsgListener() {
           return false
         }
       }
-      else if (item.bgCallback) {
+      else if (item && item.bgCallback) {
         item.bgCallback(msg.data, {
           option: msg.option,
           messageId: msg.messageId,
@@ -135,7 +132,8 @@ export function initBGMsgListener() {
         })
       }
       else {
-        return false
+        console.warn('没有监听相关事件')
+        return true
       }
 
       return true // 异步响应

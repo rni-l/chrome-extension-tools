@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-04 10:37:10
+ * @LastEditTime: 2025-03-04 11:24:46
  * @LastEditors: Lu
  * @Description:
  */
-
+import type { TCetTask } from './workflow/tasks'
 /* workflow */
 export interface CetLoopDataItem {
   name: string
@@ -100,6 +100,7 @@ export interface CetActuatorResultItem {
 export interface CetActuatorParams {
   nextTime?: number | CetNextTimeFn
   callback?: (result: CetActuatorResultItem[]) => void
+  getTabId?: (targetTask: TCetTask, currentCache: CetActuatorCache, options: CetTaskRunOptions) => Promise<number>
 }
 
 export interface CetTaskRunOptions {

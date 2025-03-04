@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-03-04 10:37:59
+ * @LastEditTime: 2025-03-04 11:17:04
  * @LastEditors: Lu
  * @Description:
  */
@@ -70,7 +70,7 @@ export function sendMsgByCS<T = unknown, R = unknown>(
     }
     chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
       if (configures.debug) {
-        console.log('cs sendMsgByCS', response)
+        console.log('cs sendMsgByCS response', messageId, response)
       }
       res({
         data: response?.data as R,
