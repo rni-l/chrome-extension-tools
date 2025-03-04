@@ -2,7 +2,6 @@
   "name": "chrome-extension-tools",
   "type": "module",
   "version": "0.0.1",
-  "private": true,
   "packageManager": "pnpm@9.15.3",
   "author": "rni-l",
   "license": "MIT",
@@ -14,12 +13,24 @@
   "bugs": {
     "url": "https://github.com/rni-l/chrome-extension-tools/issues"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.cjs"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "clear": "rimraf --glob extension/dist extension/manifest.json extension.*",
-    "build:lib": "vite build --config vite.config.ts",
+    "build:lib": "vite build --config vite.config.ts && npm run tsc",
     "build:web": "vite build --config vite.config.dev.mts",
     "build:prepare": "esno scripts/prepare.ts",
     "build": "cross-env NODE_ENV=production run-s clear build:web build:prepare build:background build:js",
@@ -35,7 +46,8 @@
     "preview": "vite preview",
     "test": "vitest --config vite.config.ts",
     "up": "taze major -I",
-    "postinstall": "npx simple-git-hooks"
+    "postinstall": "npx simple-git-hooks",
+    "tsc": "tsc --project tsconfig.build.json"
   },
   "dependencies": {
     "dayjs": "^1.11.13"
