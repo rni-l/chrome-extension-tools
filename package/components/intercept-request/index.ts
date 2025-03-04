@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-03-04 11:28:04
- * @LastEditTime: 2025-03-04 16:45:16
+ * @LastEditTime: 2025-03-04 22:45:40
  * @LastEditors: Lu
  * @Description:
  */
@@ -128,13 +128,13 @@ export function initInterceptRequest() {
       return globalStore.realXhr
     }
 
-    function unXhrHook(): void {
-      if (globalStore.realXhr) {
-      // eslint-disable-next-line no-global-assign
-        XMLHttpRequest = globalStore.realXhr
-        globalStore.realXhr = undefined
-      }
-    }
+    // function unXhrHook(): void {
+    //   if (globalStore.realXhr) {
+    //   // eslint-disable-next-line no-global-assign
+    //     XMLHttpRequest = globalStore.realXhr
+    //     globalStore.realXhr = undefined
+    //   }
+    // }
 
     // 配置 XHR 拦截
     xhrHook({
