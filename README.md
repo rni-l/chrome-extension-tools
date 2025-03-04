@@ -145,3 +145,109 @@ onMsgInCS('test3', async (res) => {
   return 'ok'
 })
 ```
+
+
+
+## 请求拦截
+
+通过改写 xhr 和 fetch，来获取请求数据。
+
+### 配置方式
+
+第一，新增一个新的 background 文件，backgroudn/intercept-reqeust.ts:
+
+```typescript
+import { initInterceptRequest } from 'chrome-extension-tools'
+initInterceptRequest()
+```
+
+第二，修改 vite 构建配置：
+
+```typescript
+{
+  build: {
+    // ...
+    lib: {
+      entry: [
+        r('src/background/main.ts'),
+        r('src/background/intercept-request.ts'),
+      ],
+      name: packageJson.name,
+      formats: ['es'],
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+        entryFileNames: (chunk) => {
+          if (chunk.name === 'main')
+            return 'index.mjs'
+          else
+            return 'intercept-request.mjs'
+        },
+        extend: true,
+      },
+    },
+  },
+}
+```
+
+这样 background 区域就会构建两个入口文件。
+
+在 background 引入 `injectInterceptRequest` 方法，并且在 tabs 事件中，选择一个合适的时机注入代码：
+
+```typescript
+import { injectInterceptRequest } from 'chrome-extension-tools'
+
+const targetDomains = [
+  'https://xxx.com/*',
+]
+const checkDomains = [
+  'https://xxx.com',
+]
+function injectInterceptRequestBg() {
+  injectInterceptRequest('./dist/background/intercept-request.mjs', targetDomains)
+}
+function checkAndInjectDomain(url?: string) {
+  if (checkDomains.some(v => (url || '').includes(v))) {
+    injectInterceptRequestBg()
+  }
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  curTabId = tabId
+  // 检查页面是否完成加载
+  if (changeInfo.status === 'complete') {
+    // 注入脚本
+    checkAndInjectDomain(tab.url)
+  }
+})
+```
+
+这样在 background 的配置已经完成，我们还需要在 content script 去接受脚本捕获的接口数据。
+
+在这个库中已经配置好相关的初始化工作：
+
+```typescript
+// content script
+import { initContentScript } from 'chrome-extension-tools'
+initContentScript()
+```
+
+收到数据，会通过消息通知发给 background 和 side panel：
+
+```typescript
+// initContentScript code:
+const res = serializeJSON(event.data.data.response)
+const item = {
+  url: event.data.data.url,
+  response: res,
+  requestType: event.data.data.requestType,
+  id: generateTenDigitRandom(),
+}
+sendMsgByCS(EVENTS.CS2SP_GET_REQUEST, item, { destination: CetDestination.SP })
+sendMsgByCS(EVENTS.CS2BG_GET_REQUEST, item, { destination: CetDestination.BG })
+```
+
+### 注意事项
+
+这种捕获方式，如果是第一次访问页面，脚本虽然注入了，但捕获不了数据，需要刷新一次页面才行。

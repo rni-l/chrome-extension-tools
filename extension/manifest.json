@@ -24,7 +24,8 @@
     "activeTab",
     "sidePanel",
     "popup",
-    "nativeMessaging"
+    "nativeMessaging",
+    "scripting"
   ],
   "host_permissions": [
     "*://*/*"

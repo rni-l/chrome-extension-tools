@@ -24,7 +24,6 @@ export async function getManifest() {
     background: isFirefox
       ? {
           scripts: ['dist/background/index.mjs'],
-          type: 'module',
         }
       : {
           service_worker: './dist/background/index.mjs',
@@ -40,7 +39,8 @@ export async function getManifest() {
       'activeTab',
       'sidePanel',
       'popup',
-      'nativeMessaging'
+      'nativeMessaging',
+      'scripting',
     ],
     host_permissions: ['*://*/*'],
     content_scripts: [
