@@ -1,10 +1,10 @@
 import { injectInterceptRequest } from '../../package/utils'
 
 const targetDomains = [
-  'https://itask.deerma.com/*',
+  'https://www.baidu.com/*',
 ]
 const checkDomains = [
-  'https://itask.deerma.com',
+  'https://www.baidu.com',
 ]
 export function injectInterceptRequestBg() {
   injectInterceptRequest('./dist/background/intercept-request.mjs', targetDomains)
