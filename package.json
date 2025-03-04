@@ -19,7 +19,9 @@
   },
   "scripts": {
     "clear": "rimraf --glob extension/dist extension/manifest.json extension.*",
-    "build": "vite build",
+    "build:web": "vite build --config vite.config.dev.mts",
+    "build:prepare": "esno scripts/prepare.ts",
+    "build": "cross-env NODE_ENV=production run-s clear build:web build:prepare build:background build:js",
     "build:background": "vite build --config vite.config.background.mts",
     "build:js": "vite build --config vite.config.content.mts",
     "dev": "npm run clear && cross-env NODE_ENV=development run-p dev:*",

@@ -22,13 +22,22 @@ export default defineConfig({
     emptyOutDir: false,
     sourcemap: isDev ? 'inline' : false,
     lib: {
-      entry: r('src/background/main.ts'),
+      entry: [
+        r('src/background/main.ts'),
+        r('src/background/intercept-request.ts'),
+      ],
       name: packageJson.name,
-      formats: ['iife'],
+      formats: ['es'],
     },
     rollupOptions: {
       output: {
-        entryFileNames: 'index.mjs',
+        manualChunks: undefined,
+        entryFileNames: (chunk) => {
+          if (chunk.name === 'main')
+            return 'index.mjs'
+          else
+            return 'intercept-request.mjs'
+        },
         extend: true,
       },
     },

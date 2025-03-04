@@ -2,6 +2,7 @@
 import { initService } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
 import { initBGMsgListener, onMsgInBG } from '../../package/message';
+import { checkAndInjectDomain } from './utils.bg';
 // only on dev mode
 if (import.meta.hot) {
   // @ts-expect-error for background HMR
@@ -9,7 +10,6 @@ if (import.meta.hot) {
   // load latest content script
   import('./contentScriptHMR')
 }
-
 
 // remove or turn this off if you don't use side panel
 const USE_SIDE_PANEL = false
@@ -37,8 +37,8 @@ function checkIsTargetWindow(tab: { windowId: number }) {
 // communication example: send previous tab title from background page
 // see shim.d.ts for type declaration
 chrome.tabs.onActivated.addListener(async (tab) => {
+  console.log('bg onActivated', tab.tabId)
   const { tabId } = tab
-  console.log('bg onActivated', tab, tabId)
   if (!checkIsTargetWindow(tab))
     return
   if (!previousTabId) {
@@ -62,6 +62,7 @@ chrome.tabs.onActivated.addListener(async (tab) => {
 })
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  console.log('tab updated', tabId, changeInfo.status)
   if (!checkIsTargetWindow(tab))
     return
   // console.log('onUpdated', tabId)
@@ -71,14 +72,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // console.log('Tab updated:', tab)
     // console.log('URL:', tab.url)
     // 这里可以执行更多的逻辑处理，例如检查URL是否符合特定模式等
+    checkAndInjectDomain(tab.url)
   }
 })
 
 chrome.tabs.onCreated.addListener((tab) => {
+  console.log('tab created', tab.id)
   if (!checkIsTargetWindow(tab))
     return
   // console.log('onCreated')
   curTabId = tab.id || 0
+  checkAndInjectDomain(tab.url)
 })
 chrome.tabs.onRemoved.addListener((tabId) => {
   // console.log('onRemoved', tabId)
@@ -86,6 +90,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.tabs.onReplaced.addListener((newTabId, oldTabId) => {
   // console.log('onReplaced', newTabId, oldTabId)
   curTabId = newTabId
+  console.log('tab replaced', newTabId)
 })
 
 // onMessage(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
