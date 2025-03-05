@@ -3,12 +3,12 @@ import { EVENTS } from '../../../package/constants';
 import { task1Configure } from '../../configure/task1';
 import { findDeepTargetByName } from '../../../package/utils';
 import { sendMsgByCS, onMsgInCS } from '../../../package/message';
-import { initContentScript } from '../../../package/workflow';
+import { initContentScriptRequest } from '../../../package/workflow';
 import { CetDestination } from '../../../package/types';
 import { toggleDebug } from '../../../package/constants';
 
 toggleDebug(true)
-initContentScript(task1Configure)
+initContentScriptRequest(task1Configure)
 const tabId = ref(0)
 
 onMsgInCS('bg2cs',  async (res) => {
@@ -23,7 +23,7 @@ onMsgInCS('to-cs2',  async (res) => {
   return 'ok'
 })
 
-// initContentScript()
+// initContentScriptRequest()
 const getTab = async () => {
   const { data, tabId, messageId} = await sendMsgByCS<undefined,chrome.tabs.Tab>(EVENTS.CS2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG })
   console.log('tab', data, data?.id, tabId, messageId)

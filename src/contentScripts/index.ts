@@ -4,7 +4,7 @@ import App from './views/App.vue'
 import { initCSMsgListener } from '../../package/message'
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (async () => {
-  console.info('[vitesse-webext] Hello world from content script')
+  console.log('[vitesse-webext] Hello world from content script')
 
   // communication example: send previous tab title from background page
   // onMessage('tab-prev', async ({ data }: any) => {

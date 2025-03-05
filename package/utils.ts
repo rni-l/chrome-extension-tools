@@ -1,11 +1,12 @@
+import type { CetWorkFlowConfigure } from './types'
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-03-04 15:37:31
+ * @LastEditTime: 2025-03-05 14:16:44
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetWorkFlowConfigure } from './types'
+import { EVENTS } from './constants'
 
 export function asyncSetTimeout(time = 1000) {
   return new Promise(resolve => setTimeout(resolve, time))
@@ -111,4 +112,8 @@ export function injectInterceptRequest(jsPath: string, matches: string[]) {
       resolve(true)
     })
   })
+}
+
+export function checkIsNotLog(messageId: string) {
+  return ![EVENTS.CS2BG_LOG, EVENTS.CS2SP_LOG, EVENTS.SP2BG_LOG].includes(messageId as any)
 }

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-03-04 11:21:49
+ * @LastEditTime: 2025-03-05 14:40:56
  * @LastEditors: Lu
  * @Description:
  */
@@ -13,8 +13,10 @@ import type {
   CetMessageItem,
   CetMessageSendResult,
 } from '../types'
-import { configures } from '../constants'
+import { cetBGLogger } from '../components/logger'
+// import { configures } from '../constants'
 import { CetDestination } from '../types'
+import { checkIsNotLog, serializeJSON } from '../utils'
 
 const messageList: CetMessageEventItem[] = []
 
@@ -26,8 +28,8 @@ export function sendMsgByBG<T = unknown, R = unknown>(
   if (!option) {
     throw new Error('option is required')
   }
-  if (configures.debug) {
-    console.log('stat sendMsgByBG', messageId, data, option)
+  if (checkIsNotLog(messageId)) {
+    cetBGLogger.info('stat sendMsgByBG', messageId, serializeJSON(data), serializeJSON(option))
   }
   return new Promise((res) => {
     if (option.destination === CetDestination.CS) {
@@ -41,8 +43,8 @@ export function sendMsgByBG<T = unknown, R = unknown>(
         data,
         option,
       } as CetMessageItem<T>, (response: CetMessageCallbackResult<R>) => {
-        if (configures.debug) {
-          console.log('sendMsgByBG response2', response)
+        if (checkIsNotLog(messageId)) {
+          cetBGLogger.info('sendMsgByBG response2', serializeJSON(response))
         }
         res({
           data: response?.data as R,
@@ -59,8 +61,8 @@ export function sendMsgByBG<T = unknown, R = unknown>(
         data,
         option,
       } as CetMessageItem<T>, (response: CetMessageCallbackResult<R>) => {
-        if (configures.debug) {
-          console.log('sendMsgByBG response', response)
+        if (checkIsNotLog(messageId)) {
+          cetBGLogger.info('sendMsgByBG response', serializeJSON(response))
         }
         res({
           data: response?.data as R,
@@ -90,8 +92,8 @@ export function onMsgInBG<T = unknown>(name: string, cb: CetMessageCallback<T>) 
 export function initBGMsgListener() {
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem | any, sender, sendResponse) => {
-      if (configures.debug) {
-        console.log('bg receive', message, sender)
+      if (checkIsNotLog(message.messageId)) {
+        cetBGLogger.info('bg receive', message)
       }
       if (Object.prototype.toString.call(message) !== '[object Object]' || !message.messageId) {
         // 不是属于内置定义的 message，不处理
@@ -108,8 +110,8 @@ export function initBGMsgListener() {
         if (msg.option.tabId) {
           sendMsgByBG(msg.messageId, msg.data, msg.option)
             .then((res) => {
-              if (configures.debug) {
-                console.log('sendMsgByBG response(cs)', res)
+              if (checkIsNotLog(msg.messageId)) {
+                cetBGLogger.info('sendMsgByBG response(cs)', res)
               }
               sendResponse({ data: res, success: true })
             })

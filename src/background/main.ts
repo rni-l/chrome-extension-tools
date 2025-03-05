@@ -3,7 +3,7 @@ import { initService } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
 import { initBGMsgListener, onMsgInBG } from '../../package/message';
 import { checkAndInjectDomain } from './utils.bg';
-import { cetLogger } from '../../package/components/logger/ins.logger';
+// import { cetLogger } from '../../package/components/logger/ins.logger';
 // only on dev mode
 if (import.meta.hot) {
   // @ts-expect-error for background HMR

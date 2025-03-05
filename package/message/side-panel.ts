@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 22:00:08
- * @LastEditTime: 2025-03-04 11:07:14
+ * @LastEditTime: 2025-03-05 14:41:37
  * @LastEditors: Lu
  * @Description:
  */
@@ -14,16 +14,18 @@ import type {
   CetMessageItem,
   CetMessageSendResult,
 } from '../types'
-import { configures } from '../constants'
+import { cetSPLogger } from '../components/logger'
+// import { configures } from '../constants'
 import { CetDestination } from '../types'
+import { checkIsNotLog, serializeJSON } from '../utils'
 
 const messageList: CetMessageEventItem[] = []
 
 export function initSPMsgListener() {
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem, sender, sendResponse) => {
-      if (configures.debug) {
-        console.log('sp receive', message, sender)
+      if (checkIsNotLog(message.messageId)) {
+        cetSPLogger.info('sp receive', message)
       }
       const item = messageList.find(v => v.messageId === message.messageId)
       const destination = message.option.destination
@@ -85,8 +87,8 @@ export function sendMsgBySP<T = unknown, R = unknown>(
   option: CetDestinationOption,
 ): Promise<CetMessageSendResult<R>> {
   return new Promise((res) => {
-    if (configures.debug) {
-      console.log('sendMsgBySP', messageId, data, option)
+    if (checkIsNotLog(messageId)) {
+      cetSPLogger.info('sendMsgBySP', messageId, serializeJSON(data), serializeJSON(option))
     }
     if (option.destination === CetDestination.CS && !option.tabId) {
       console.error('tabId is required')
@@ -99,8 +101,8 @@ export function sendMsgBySP<T = unknown, R = unknown>(
       })
     }
     chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
-      if (configures.debug) {
-        console.log('sp sendMsgBySP', response)
+      if (checkIsNotLog(messageId)) {
+        cetSPLogger.info('sp sendMsgBySP', serializeJSON(response))
       }
       if (option.destination === CetDestination.CS) {
         // 因为会经过 bg，所以需要拆分数据

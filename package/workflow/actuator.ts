@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-03-04 11:24:07
+ * @LastEditTime: 2025-03-05 15:03:56
  * @LastEditors: Lu
  * @Description:
  */
@@ -101,7 +101,9 @@ export class CetActuator {
       if (tabId) {
         targetTask.setTabId(tabId)
       }
+      this.params.taskBeforeCb?.(targetTask, cache, options)
       const result = await targetTask.run(cache, options)
+      this.params.taskAfterCb?.(targetTask, result, options.logItem)
       if (cache.isRetry && !result) {
         cache.currentRetryNumber++
         if (cache.currentRetryNumber <= cache.retryNumber) {

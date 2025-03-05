@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-04 17:49:48
+ * @LastEditTime: 2025-03-05 16:37:41
  * @LastEditors: Lu
  * @Description:
  */
@@ -101,6 +101,8 @@ export interface CetActuatorParams {
   nextTime?: number | CetNextTimeFn
   callback?: (result: CetActuatorResultItem[]) => void
   getTabId?: (targetTask: TCetTask, currentCache: CetActuatorCache, options: CetTaskRunOptions) => Promise<number>
+  taskBeforeCb?: (task: TCetTask, cache: CetActuatorCache, options: CetTaskRunOptions) => void
+  taskAfterCb?: (task: TCetTask, result: boolean, logItem: CetActuatorResultItem | undefined) => void
 }
 
 export interface CetTaskRunOptions {
@@ -197,7 +199,7 @@ export enum CetLogLevel {
   WARN = 'warn',
   ERROR = 'error',
 }
-
+export type CetLogChange = (logs: CetLogEntry[]) => void
 export interface CetLogOptions {
   level?: CetLogLevel
   timestamp?: boolean
@@ -209,12 +211,15 @@ export interface CetLogOptions {
   isCS?: boolean
   isSP?: boolean
   isShowInConsole?: boolean
+  logChange?: CetLogChange
+  formatTimePattern?: string
 }
 
 export interface CetLogEntry {
   timestamp: string
   level: CetLogLevel
   message: string
+  formattedMessage: string
   args: any[]
   isSyncToBG?: boolean
   isSyncToSP?: boolean

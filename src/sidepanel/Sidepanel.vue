@@ -4,7 +4,7 @@ import { task1Configure } from "../configure/task1";
 import { EVENTS, toggleDebug } from '../../package/constants';
 import { onMsgInSP, sendMsgBySP } from "../../package/message";
 import { CetDestination } from "../../package/types";
-import { cetLogger } from '../../package/components/logger/ins.logger';
+// import { cetLogger } from '../../package/components/logger/ins.logger';
 
 // setInterval(() => {
 //   console.log(cetLogger.getLogs())

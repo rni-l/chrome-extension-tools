@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-03-04 11:17:04
+ * @LastEditTime: 2025-03-05 14:45:06
  * @LastEditors: Lu
  * @Description:
  */
@@ -14,7 +14,8 @@ import type {
   CetMessageItem,
   CetMessageSendResult,
 } from '../types'
-import { configures } from '../constants'
+import { cetCSLogger } from '../components/logger'
+import { checkIsNotLog, serializeJSON } from '../utils'
 
 const messageList: CetMessageEventItem[] = []
 
@@ -22,8 +23,8 @@ export function initCSMsgListener() {
   console.log('initCSMsgListener')
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem, sender, sendResponse) => {
-      if (configures.debug) {
-        console.log('cs', message)
+      if (checkIsNotLog(message.messageId)) {
+        cetCSLogger.info('cs receive', serializeJSON(message))
       }
       if (Object.prototype.toString.call(message) !== '[object Object]' || !message.messageId) {
         // 不是属于内置定义的 message，不处理
@@ -65,12 +66,13 @@ export function sendMsgByCS<T = unknown, R = unknown>(
   option: CetDestinationOption,
 ): Promise<CetMessageSendResult<R>> {
   return new Promise((res) => {
-    if (configures.debug) {
-      console.log('cs sendMsgByCS', messageId, data, option)
+    console.log(messageId)
+    if (checkIsNotLog(messageId)) {
+      cetCSLogger.info('cs sendMsgByCS', messageId, serializeJSON(data), serializeJSON(option))
     }
     chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
-      if (configures.debug) {
-        console.log('cs sendMsgByCS response', messageId, response)
+      if (checkIsNotLog(messageId)) {
+        cetCSLogger.info('cs sendMsgByCS response', messageId, serializeJSON(response))
       }
       res({
         data: response?.data as R,

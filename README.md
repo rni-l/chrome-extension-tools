@@ -229,14 +229,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 ```typescript
 // content script
-import { initContentScript } from 'chrome-extension-tools'
-initContentScript()
+import { initContentScriptRequest } from 'chrome-extension-tools'
+initContentScriptRequest()
 ```
 
 收到数据，会通过消息通知发给 background 和 side panel：
 
 ```typescript
-// initContentScript code:
+// initContentScriptRequest code:
 const res = serializeJSON(event.data.data.response)
 const item = {
   url: event.data.data.url,
