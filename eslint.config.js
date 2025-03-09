@@ -9,6 +9,6 @@ export default antfu(
       'ts/ban-ts-comment': 0,
       'unused-imports/no-unused-vars': 0,
     },
-    ignores: ['src/*', 'README.md'],
+    ignores: ['src/*', 'README.md', 'package/components/intercept-request/index.ts'],
   },
 )

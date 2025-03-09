@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-04 11:18:52
+ * @LastEditTime: 2025-03-07 16:36:41
  * @LastEditors: Lu
  * @Description:
  */
@@ -83,7 +83,12 @@ export class CetTask {
       name: configure.name,
       success: false,
     }
-    const commonParams: CetCommonParams = { isFirstLevel: true, name: this.name }
+    const commonParams: CetCommonParams = {
+      isFirstLevel: this.level === 0,
+      name: this.name,
+      tabId: this.tabId,
+      userOption: options.userOption || {},
+    }
     if (currentCache.isRetry && currentCache.currentRetryNumber > 0) {
       commonParams.retryNumber = currentCache.currentRetryNumber
     }
@@ -101,7 +106,7 @@ export class CetTask {
     const csResult: CetCsFnResult = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        const msgResult = await sendMsgBySP<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
+        const { data } = await sendMsgBySP<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
@@ -110,12 +115,17 @@ export class CetTask {
           destination: CetDestination.CS,
           tabId: this.tabId,
         })
-        console.log('msgResult', msgResult)
-        csResult.tabId = msgResult.tabId
+        console.log('msgResult', data)
+        csResult.tabId = data?.tabId
         // TODO：获取 tabUrl
-        csResult.tabUrl = msgResult.tabUrl
-        csResult.data = msgResult.data
-        csResult.next = msgResult.success
+        csResult.tabUrl = data?.tabUrl
+        csResult.data = data?.data
+        csResult.next = !!data?.next
+        // csResult.tabId = msgResult.tabId
+        // // TODO：获取 tabUrl
+        // csResult.tabUrl = msgResult.tabUrl
+        // csResult.data = msgResult.data?.data
+        // csResult.next = msgResult.success && !!msgResult.data?.next
         return csResult.next
       }, (configure.csRetryNumber || 0) + 1, configure.csRetryInterval || 1000)
     }

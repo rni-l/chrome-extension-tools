@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-03-05 14:45:06
+ * @LastEditTime: 2025-03-06 15:30:04
  * @LastEditors: Lu
  * @Description:
  */
@@ -66,7 +66,6 @@ export function sendMsgByCS<T = unknown, R = unknown>(
   option: CetDestinationOption,
 ): Promise<CetMessageSendResult<R>> {
   return new Promise((res) => {
-    console.log(messageId)
     if (checkIsNotLog(messageId)) {
       cetCSLogger.info('cs sendMsgByCS', messageId, serializeJSON(data), serializeJSON(option))
     }

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-03-04 10:34:46
+ * @LastEditTime: 2025-03-07 16:37:39
  * @LastEditors: Lu
  * @Description: ok
  */
@@ -61,7 +61,7 @@ vi.mock('../../package/message', () => {
         return { next: true, tabId: tabId1, tabUrl: tabUrl1 }
       }
       const res = await target.csFn(data)
-      return { success: !!res.next, data: res.data, tabId: tabId1, tabUrl: tabUrl1 }
+      return { success: true, data: { data: res.data, tabId: tabId1, tabUrl: tabUrl1, next: res.next } }
     }),
   }
 })

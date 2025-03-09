@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-03-05 16:40:42
+ * @LastEditTime: 2025-03-06 16:30:27
  * @LastEditors: Lu
  * @Description:
  */
@@ -11,7 +11,7 @@ import { cetBGLogger, cetCSLogger, cetSPLogger } from '../components/logger'
 import { EVENTS } from '../constants'
 import { onMsgInBG, onMsgInCS, onMsgInSP, sendMsgByCS } from '../message'
 import { CetDestination } from '../types'
-import { generateTenDigitRandom, serializeJSON } from '../utils'
+import { findDeepTargetByName, serializeJSON } from '../utils'
 
 export * from './actuator'
 
@@ -49,15 +49,16 @@ export function initContentScriptRequest() {
   cetCSLogger.info('initContentScriptRequest')
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === EVENTS.GET_CONTENT_SCRIPT_REQUEST) {
-      const res = serializeJSON(event.data.data.response)
-      const item = {
-        url: event.data.data.url,
-        response: res,
-        requestType: event.data.data.requestType,
-        id: generateTenDigitRandom(),
-      }
-      sendMsgByCS(EVENTS.CS2SP_GET_REQUEST, item, { destination: CetDestination.SP })
-      sendMsgByCS(EVENTS.CS2BG_GET_REQUEST, item, { destination: CetDestination.BG })
+      const res = (event.data.data)
+      // const item = {
+      //   url: res.url,
+      //   response: res,
+      //   data: res.data,
+      //   requestType: event.data.data.requestType,
+      //   id: generateTenDigitRandom(),
+      // }
+      sendMsgByCS(EVENTS.CS2SP_GET_REQUEST, res, { destination: CetDestination.SP })
+      sendMsgByCS(EVENTS.CS2BG_GET_REQUEST, res, { destination: CetDestination.BG })
     }
   }, false)
 }
@@ -68,12 +69,13 @@ export function initContentScriptTask(configures?: CetWorkFlowConfigure[]) {
   }
   onMsgInCS<CsFnParams>(EVENTS.SP2CS_EXECUTE_TASK, async (res) => {
     cetCSLogger.info('SP2CS_EXECUTE_TASK: ', serializeJSON(res))
-    const csFn = configures.find(v => v.name === res.name)?.csFn
-    if (csFn) {
-      const csResult = await csFn(res)
+    const target = findDeepTargetByName(configures, res.name)
+    if (target && target.csFn) {
+      const csResult = await target.csFn(res)
       return csResult
     }
     else {
+      cetCSLogger.info('SP2CS_EXECUTE_TASK: ', res.name, ' not found')
       return { next: true }
     }
   })

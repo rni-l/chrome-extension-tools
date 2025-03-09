@@ -1,218 +1,178 @@
-/*
- * @Author: Lu
- * @Date: 2025-03-04 11:28:04
- * @LastEditTime: 2025-03-04 22:45:40
- * @LastEditors: Lu
- * @Description:
- */
+// @ts-nocheck
 
-// 将全局声明移到单独的类型声明文件中
-type XMLHttpRequestCallback = (this: XMLHttpRequest, ev: Event) => any
-
-interface XhrHookConfig {
-  [key: string]: {
-    callback?: (args: any[], xhr: XMLHttpRequest) => any
-    getter?: (value: any, xhr: any) => any
-    setter?: (value: any, xhr: any) => any
-  }
-}
-
-interface RequestData {
-  url: string
-  method?: string
-  response: any
-  requestType: 'xhr-onload' | 'xhr-onreadystatechange' | 'xhr-onloadend' | 'fetch'
-}
-
-interface CustomXMLHttpRequest extends XMLHttpRequest {
-  xhr: XMLHttpRequest
-  open_args?: any[]
-  [key: string]: any
-}
 export function initInterceptRequest() {
-  // 创建一个安全的全局存储
-  // @ts-ignore
-  const globalStore: { realXhr?: typeof XMLHttpRequest } = window
+  console.log('inject script')
+  // xhr中的方法拦截，eg: open、send etc.
+  function hookFunction(funcName, config) {
+    return function () {
+      const args = Array.prototype.slice.call(arguments)
+      // 将open参数存入xhr, 在其它事件回调中可以获取到。
+      if (funcName === 'open') {
+        this.xhr.open_args = args
+      }
+      if (config[funcName]) {
+      // 配置的函数执行结果返回为true时终止调用
+        const result = config[funcName].call(this, args, this.xhr)
+        if (result)
+          return result
+      }
+      return this.xhr[funcName].apply(this.xhr, arguments)
+    }
+  }
 
-  function injectCaptureRequest(): void {
-    function hookFunction(funcName: string, config: XhrHookConfig): (...args: any[]) => any {
-      return function (this: CustomXMLHttpRequest, ...args: any[]) {
-        if (funcName === 'open') {
-          this.open_args = args
+  // xhr中的属性和事件的拦截
+  function getterFactory(attr, config) {
+    return function () {
+      const value = this.hasOwnProperty(`${attr}_`) ? this[`${attr}_`] : this.xhr[attr]
+      const getterHook = (config[attr] || {}).getter
+      return getterHook && getterHook(value, this) || value
+    }
+  }
+  // 在赋值时触发该工厂函数（如onload等事件）
+  function setterFactory(attr, config) {
+    return function (value) {
+      const _this = this
+      const xhr = this.xhr
+      const hook = config[attr] // 方法或对象
+      this[`${attr}_`] = value
+      if (attr.startsWith('on')) {
+      // note：间接的在真实的xhr上给事件绑定函数
+        xhr[attr] = function (e) {
+        // e = configEvent(e, _this)
+          const result = hook && config[attr].call(_this, xhr, e)
+          result || value.call(_this, e)
         }
-
-        const hookConfig = config[funcName]
-        if (hookConfig?.callback) {
-          const result = hookConfig.callback.call(this, args, this.xhr)
-          if (result !== undefined) {
-            return result
-          }
+      }
+      else {
+        const attrSetterHook = (hook || {}).setter
+        value = attrSetterHook && attrSetterHook(value, _this) || value
+        try {
+        // 并非xhr的所有属性都是可写的
+          xhr[attr] = value
         }
-
-        return this.xhr[funcName as keyof XMLHttpRequest]?.(...args)
+        catch (e) {
+          console.warn(`xhr的${attr}属性不可写`)
+        }
       }
     }
+  }
 
-    function getterFactory(attr: string, config: XhrHookConfig): () => any {
-      return function (this: CustomXMLHttpRequest): any {
-        const value = Object.prototype.hasOwnProperty.call(this, `${attr}_`)
-          ? this[`${attr}_`]
-          : this.xhr[attr as keyof XMLHttpRequest]
-
-        const hookConfig = config[attr]
-        return hookConfig?.getter ? hookConfig.getter(value, this) : value
-      }
-    }
-
-    function setterFactory(attr: string, config: XhrHookConfig): (value: any) => void {
-      return function (this: CustomXMLHttpRequest, value: any): void {
-        const xhr = this.xhr
-        const hookConfig = config[attr]
-        this[`${attr}_`] = value
-
-        if (attr.startsWith('on')) {
-          const eventAttr = attr as keyof XMLHttpRequest
-          if (typeof value === 'function') {
-          // @ts-ignore
-            xhr[eventAttr] = ((e: Event) => {
-              const result = hookConfig?.callback?.call(this, [e], xhr)
-              if (result !== true) {
-                value.call(this, e)
-              }
-            }) as XMLHttpRequestCallback
-          }
-          else {
-          // @ts-ignore
-            xhr[eventAttr] = null
-          }
+  // 核心拦截的handler
+  function xhrHook(config) {
+  // 存储真实的xhr构造器, 在取消hook时，可恢复
+    window.realXhr = window.realXhr || XMLHttpRequest
+    // 重写XMLHttpRequest构造函数
+    XMLHttpRequest = function () {
+      const xhr = new window.realXhr()
+      // 真实的xhr实例存储到自定义的xhr属性中
+      this.xhr = xhr
+      // note: 遍历实例及其原型上的属性（实例和原型链上有相同属性时，取实例属性）
+      for (const attr in xhr) {
+        if (Object.prototype.toString.call(xhr[attr]) === '[object Function]') {
+          this[attr] = hookFunction(attr, config) // 接管xhr function
         }
         else {
-          const newValue = hookConfig?.setter ? hookConfig.setter(value, this) : value
-          try {
-          // 使用类型断言来处理动态属性访问
-            ;(xhr as any)[attr] = newValue
-          }
-          catch (e) {
-            console.warn(`xhr的${attr}属性不可写`)
-          }
+        // attention: 如果重写XMLHttpRequest，必须要全部重写，否则在ajax中不会触发success、error（原因是3.x版本是在load事件中执行success）
+          Object.defineProperty(this, attr, { // 接管xhr attr、event
+            get: getterFactory(attr, config),
+            set: setterFactory(attr, config),
+            enumerable: true,
+          })
         }
       }
     }
+    console.log('init request')
+    return window.realXhr
+  }
 
-    function xhrHook(config: XhrHookConfig): typeof XMLHttpRequest {
-      globalStore.realXhr = globalStore.realXhr || XMLHttpRequest
+  // 解除xhr拦截，归还xhr管理权
+  // function unXhrHook() {
+  //   if (window[realXhr])
+  //     XMLHttpRequest = window[realXhr]
+  //   window[realXhr] = undefined
+  // }
 
-      // eslint-disable-next-line no-global-assign
-      XMLHttpRequest = function (this: CustomXMLHttpRequest) {
-        const xhr = new globalStore.realXhr!()
-        this.xhr = xhr
-
-        // 复制原始 XMLHttpRequest 的属性
-        for (const attr in xhr) {
-        // @ts-ignore
-          if (typeof xhr[attr] === 'function') {
-            this[attr] = hookFunction(attr, config)
-          }
-          else {
-            Object.defineProperty(this, attr, {
-              get: getterFactory(attr, config),
-              set: setterFactory(attr, config),
-              enumerable: true,
-            })
-          }
-        }
-      } as unknown as typeof XMLHttpRequest
-
-      // Object.setPrototypeOf(XHRProxy.prototype, XMLHttpRequest.prototype)
-      // return XHRProxy
-      return globalStore.realXhr
-    }
-
-    // function unXhrHook(): void {
-    //   if (globalStore.realXhr) {
-    //   // eslint-disable-next-line no-global-assign
-    //     XMLHttpRequest = globalStore.realXhr
-    //     globalStore.realXhr = undefined
-    //   }
-    // }
-
-    // 配置 XHR 拦截
-    xhrHook({
-      open: {
-        callback(args: any[], xhr: XMLHttpRequest) {
-        // 可以在这里添加请求拦截逻辑
+  xhrHook({
+    open(args, xhr) {
+    // return true // 返回true将终止请求，这个就是常规拦截的精髓了
+    },
+    onload(xhr) {
+    // 对响应结果做处理
+      window.postMessage({
+        type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+        data: {
+          url: xhr.open_args[1],
+          method: xhr.open_args[0],
+          response: xhr.response,
+          body: xhr._data,
+          headers: xhr._headers,
+          requestType: 'xhr-onload',
         },
-      },
-      onload: {
-        // @ts-ignore
-        callback(args: any[], xhr: CustomXMLHttpRequest) {
-          postRequestMessage({
-            url: xhr.open_args?.[1],
-            method: xhr.open_args?.[0],
-            response: xhr.response,
-            requestType: 'xhr-onload',
-          })
-        },
-      },
-      onreadystatechange: {
-        // @ts-ignore
-        callback(args: any[], xhr: CustomXMLHttpRequest) {
-          if (xhr?.readyState === 4) {
-            postRequestMessage({
-              url: xhr.open_args?.[1],
-              method: xhr.open_args?.[0],
-              response: xhr.response,
-              requestType: 'xhr-onreadystatechange',
-            })
-          }
-        },
-      },
-      onloadend: {
-        // @ts-ignore
-        callback(args: any[], xhr: CustomXMLHttpRequest) {
-          postRequestMessage({
-            url: xhr.open_args?.[1],
-            method: xhr.open_args?.[0],
-            response: xhr.response,
-            requestType: 'xhr-onloadend',
-          })
-        },
-      },
-    })
-
-    // 重写 fetch
-    const originalFetch = window.fetch.bind(window)
-    window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-      const url = input instanceof Request ? input.url : input.toString()
-
-      return originalFetch(input, init).then((response) => {
-        const responseClone = response.clone()
-
-        if (responseClone.headers.get('Content-Type')?.includes('application/json')) {
-          responseClone.json().then((json) => {
-            postRequestMessage({
-              url,
-              method: init?.method,
-              response: json,
-              requestType: 'fetch',
-            })
-          })
-        }
-
-        return response
       })
-    }
+    },
+    onreadystatechange(xhr) {
+    // 对响应结果做处理
+      if (xhr && xhr.readyState === 4) {
+        window.postMessage({
+          type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+          data: {
+            url: xhr.open_args[1],
+            method: xhr.open_args[0],
+            response: xhr.response,
+            body: xhr._data,
+            headers: xhr._headers,
+            requestType: 'xhr-onreadystatechange',
+          },
+        })
+      }
+    },
+    onloadend(xhr) {
+      console.log(xhr)
+      // 对响应结果做处理
+      window.postMessage({
+        type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+        data: {
+          url: xhr._url || xhr.open_args[1],
+          method: xhr.open_args[0],
+          response: xhr.response,
+          body: xhr._data,
+          headers: xhr._headers,
+          requestType: 'xhr-onloadend',
+        },
+      })
+    },
+  })
 
-    console.log('inject ok')
-  }
+  // 保存原始的 fetch 函数
+  const originalFetch = window.fetch
 
-  // 统一的消息发送函数
-  function postRequestMessage(data: RequestData): void {
-    window.postMessage({
-      type: 'CS2SP_GET_REQUEST',
-      data,
+  // 重写全局的 fetch 函数
+  window.fetch = function (url, options) {
+    // 调用原始的 fetch 函数
+    return originalFetch(url, options).then((response) => {
+    // 克隆响应对象进行读取，这样它就不会干扰实际的响应体读取
+      const responseClone = response.clone()
+      // 检查响应体类型，安全地打印响应体内容
+      if (responseClone.headers.get('Content-Type')?.includes('application/json')) {
+        responseClone.json().then((json) => {
+          // console.log('capture fetch successful', url)
+          window.postMessage({
+            type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+            data: JSON.parse(JSON.stringify({
+              url,
+              method: options?.method,
+              response: json,
+              body: options?.body,
+              headers: options?.headers,
+              requestType: 'fetch',
+            })),
+          })
+        })
+      }
+
+      // 返回原始响应对象以不干扰后续的响应处理
+      return response
     })
   }
-
-  injectCaptureRequest()
+  console.log('inject ok')
 }

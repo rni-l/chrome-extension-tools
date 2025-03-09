@@ -1,8 +1,9 @@
 
-import { initService } from '../../package/workflow/index';
+import { initBackground } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
 import { initBGMsgListener, onMsgInBG } from '../../package/message';
 import { checkAndInjectDomain } from './utils.bg';
+import { handleResponseData } from '../../package/utils';
 // import { cetLogger } from '../../package/components/logger/ins.logger';
 // only on dev mode
 if (import.meta.hot) {
@@ -14,7 +15,7 @@ if (import.meta.hot) {
 
 // remove or turn this off if you don't use side panel
 const USE_SIDE_PANEL = false
-
+const cacheTabInject: Record<string, boolean> = {}
 // to toggle the sidepanel with the action button in chromium:
 if (USE_SIDE_PANEL) {
   chrome.sidePanel
@@ -73,7 +74,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // console.log('Tab updated:', tab)
     // console.log('URL:', tab.url)
     // 这里可以执行更多的逻辑处理，例如检查URL是否符合特定模式等
-    checkAndInjectDomain(tab.url)
+    checkAndInjectDomain(cacheTabInject, tabId, tab.url)
   }
 })
 
@@ -83,7 +84,7 @@ chrome.tabs.onCreated.addListener((tab) => {
     return
   // console.log('onCreated')
   curTabId = tab.id || 0
-  checkAndInjectDomain(tab.url)
+  // checkAndInjectDomain(cacheTabInject, tab.id || 0, tab.url)
 })
 chrome.tabs.onRemoved.addListener((tabId) => {
   // console.log('onRemoved', tabId)
@@ -109,8 +110,15 @@ chrome.tabs.onReplaced.addListener((newTabId, oldTabId) => {
 onMsgInBG('to-cs', async () => undefined)
 onMsgInBG('test3', async () => undefined)
 onMsgInBG('task1', async () => undefined)
+
+onMsgInBG(EVENTS.CS2BG_GET_REQUEST, async (data: any) => {
+  console.log(data)
+  console.log(data?.url)
+  console.log(handleResponseData(data?.response))
+})
+
 initBGMsgListener()
-initService()
+initBackground()
 
 // setInterval(() => {
 //   console.log(cetLogger.getLogs())

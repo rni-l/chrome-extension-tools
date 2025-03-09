@@ -1,18 +1,19 @@
 import { injectInterceptRequest } from '../../package/utils'
 
-const targetDomains = [
-  'https://www.baidu.com/*',
+const targetDomains: string[] = [
 ]
-const checkDomains = [
-  'https://www.baidu.com',
+const checkDomains: string[] = [
 ]
-export function injectInterceptRequestBg() {
+function injectInterceptRequestBg() {
+  console.log('injectInterceptRequestBg')
   injectInterceptRequest('./dist/background/intercept-request.mjs', targetDomains)
 }
-export function checkAndInjectDomain(url?: string) {
-  console.log('checkAndInjectDomain',url)
+export function checkAndInjectDomain(cacheTabInject: Record<string, boolean>, tabId: number, url?: string) {
+  if (cacheTabInject[tabId])
+    return
+  console.log('check', url)
   if (checkDomains.some(v => (url || '').includes(v))) {
-    console.log('will inject')
+    cacheTabInject[tabId] = true
     injectInterceptRequestBg()
   }
 }

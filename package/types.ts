@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-05 16:37:41
+ * @LastEditTime: 2025-03-06 16:12:42
  * @LastEditors: Lu
  * @Description:
  */
@@ -26,6 +26,8 @@ export interface CetCommonParams {
   retryNumber?: number
   skipCsCallbackError?: boolean
   name: string
+  tabId?: number
+  userOption?: Record<string, any>
 }
 
 export interface CsFnParams extends CetCommonParams {
@@ -109,6 +111,7 @@ export interface CetTaskRunOptions {
   logItem: CetActuatorResultItem | undefined
   currentLoopData?: CetLoopDataItem
   currentLoopIndex?: number
+  userOption?: Record<string, any>
 }
 
 /*  message */

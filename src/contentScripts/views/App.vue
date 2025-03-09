@@ -7,8 +7,8 @@ import { initContentScriptRequest } from '../../../package/workflow';
 import { CetDestination } from '../../../package/types';
 import { toggleDebug } from '../../../package/constants';
 
-toggleDebug(true)
-initContentScriptRequest(task1Configure)
+toggleDebug(false)
+initContentScriptRequest()
 const tabId = ref(0)
 
 onMsgInCS('bg2cs',  async (res) => {

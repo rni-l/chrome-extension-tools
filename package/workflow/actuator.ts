@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-03-05 15:03:56
+ * @LastEditTime: 2025-03-07 16:47:08
  * @LastEditors: Lu
  * @Description:
  */
@@ -72,7 +72,7 @@ export class CetActuator {
     return result
   }
 
-  async run(): Promise<CetActuatorResultItem[]> {
+  async run(userOption?: Record<string, any>): Promise<CetActuatorResultItem[]> {
     if (this.checkIsSameName(this.configures)) {
       console.log('error')
       throw new Error('name 不能重复')
@@ -80,6 +80,7 @@ export class CetActuator {
     const logs: CetActuatorResultItem[] = []
     const options: CetTaskRunOptions = {
       logItem: undefined,
+      userOption,
     }
     const actuatorCacheMap = this.getActuatorCache(this.configures)
     // const tasks = this.getTasks(options)
@@ -119,6 +120,7 @@ export class CetActuator {
       }
       options.logItem && logs.push(options.logItem)
       // 失败，中断执行
+      // TODO: 循环中的失败，下一个循环继续
       if (!result) {
         break
       }

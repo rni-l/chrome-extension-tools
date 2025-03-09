@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-03-05 14:40:56
+ * @LastEditTime: 2025-03-06 15:27:12
  * @LastEditors: Lu
  * @Description:
  */
@@ -93,7 +93,7 @@ export function initBGMsgListener() {
   chrome.runtime.onMessage.addListener(
     (message: CetMessageItem | any, sender, sendResponse) => {
       if (checkIsNotLog(message.messageId)) {
-        cetBGLogger.info('bg receive', message)
+        cetBGLogger.info('bg receive', serializeJSON(message))
       }
       if (Object.prototype.toString.call(message) !== '[object Object]' || !message.messageId) {
         // 不是属于内置定义的 message，不处理
