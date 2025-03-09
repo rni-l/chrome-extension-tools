@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { CetActuator } from "../../package/workflow";
+import { CetActuator, initSidePanel } from "../../package/workflow";
 import { task1Configure } from "../configure/task1";
 import { EVENTS, toggleDebug } from '../../package/constants';
 import { onMsgInSP, sendMsgBySP } from "../../package/message";
 import { CetDestination } from "../../package/types";
+import { cetLogger } from '../../package/components/logger/ins.logger';
+
+// setInterval(() => {
+//   console.log(cetLogger.getLogs())
+// }, 1000)
+initSidePanel()
 const sendToBackground = async () => {
     const res = await sendMsgBySP(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG });
     console.log('sp get tab', res)

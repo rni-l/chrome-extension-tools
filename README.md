@@ -251,3 +251,108 @@ sendMsgByCS(EVENTS.CS2BG_GET_REQUEST, item, { destination: CetDestination.BG })
 ### 注意事项
 
 这种捕获方式，如果是第一次访问页面，脚本虽然注入了，但捕获不了数据，需要刷新一次页面才行。
+
+
+
+## 日志模块
+
+日志模块提供了一个统一的日志记录系统，支持多级别日志、日志缓存、跨进程同步等功能。
+
+组件库内已经默认初始化一个 logger，它会收集内置的消息通知：
+
+```typescript
+import { CetLogger, CetLogLevel } from 'chrome-extension-tools'
+
+export const cetLogger = new CetLogger({
+  isCS: true,
+  isSP: true,
+  isSyncToBG: true,
+  isSyncToSP: true,
+  level: CetLogLevel.DEBUG,
+})
+
+```
+
+
+
+### 基本用法
+
+```typescript
+import { CetLogger, CetLogLevel } from 'chrome-extension-tools'
+
+// 获取日志实例
+const logger = CetLogger.getInstance({
+  level: CetLogLevel.DEBUG,
+  prefix: '[My Extension]',
+  maxCacheSize: 1000
+})
+
+// 记录不同级别的日志
+logger.debug('调试信息')
+logger.info('普通信息')
+logger.warn('警告信息')
+logger.error('错误信息')
+```
+
+### 配置选项
+
+| 选项名 | 类型 | 默认值 | 描述 |
+|--------|------|--------|------|
+| level | LogLevel | INFO | 日志级别，可选值：DEBUG、INFO、WARN、ERROR |
+| timestamp | boolean | true | 是否显示时间戳 |
+| prefix | string | '[Chrome Extension]' | 日志前缀 |
+| color | boolean | true | 是否使用颜色输出 |
+| maxCacheSize | number | 5000 | 最大缓存日志数量 |
+| isSyncToBG | boolean | false | 是否同步到后台进程 |
+| isSyncToSP | boolean | false | 是否同步到弹出窗口 |
+| isCS | boolean | false | 是否为内容脚本 |
+| isShowInConsole | boolean | false | 是否在 console.log 显示日志 |
+
+### 日志缓存
+
+日志模块支持日志缓存功能，可以通过以下方法操作缓存：
+
+```typescript
+// 获取所有缓存的日志
+const allLogs = logger.getLogs()
+
+// 获取指定级别的日志
+const errorLogs = logger.getLogsByLevel(LogLevel.ERROR)
+
+// 清空日志缓存
+logger.clearLogs()
+
+// 获取当前缓存大小
+const cacheSize = logger.getCacheSize()
+```
+
+### 跨进程同步
+
+支持将 content script 或 sidepanel 的日志同步到 sidepanel 或 background
+
+```typescript
+// content script 将日志同步到 background 和 sidepanel
+const logger = CetLogger.getInstance({
+  isCS: true,
+  isSyncToBG: true,
+  isSyncToSP: true,
+})
+
+// side panel 将日志同步到 background
+const logger = CetLogger.getInstance({
+  isSP: true,
+  isSyncToBG: true,
+})
+```
+
+### 动态配置
+
+可以通过 `setOptions` 方法动态修改日志配置：
+
+```typescript
+logger.setOptions({
+  level: LogLevel.WARN,
+  timestamp: false
+})
+```
+

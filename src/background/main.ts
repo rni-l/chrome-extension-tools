@@ -3,6 +3,7 @@ import { initService } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
 import { initBGMsgListener, onMsgInBG } from '../../package/message';
 import { checkAndInjectDomain } from './utils.bg';
+import { cetLogger } from '../../package/components/logger/ins.logger';
 // only on dev mode
 if (import.meta.hot) {
   // @ts-expect-error for background HMR
@@ -110,3 +111,7 @@ onMsgInBG('test3', async () => undefined)
 onMsgInBG('task1', async () => undefined)
 initBGMsgListener()
 initService()
+
+// setInterval(() => {
+//   console.log(cetLogger.getLogs())
+// }, 1000)

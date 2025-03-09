@@ -1,7 +1,7 @@
 {
   "name": "chrome-extension-tools",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.15.3",
   "author": "rni-l",
@@ -19,6 +19,7 @@
   },
   "scripts": {
     "clear": "rimraf --glob extension/dist extension/manifest.json extension.*",
+    "build:lib": "vite build --config vite.config.ts",
     "build:web": "vite build --config vite.config.dev.mts",
     "build:prepare": "esno scripts/prepare.ts",
     "build": "cross-env NODE_ENV=production run-s clear build:web build:prepare build:background build:js",
@@ -35,6 +36,9 @@
     "test": "vitest --config vite.config.ts",
     "up": "taze major -I",
     "postinstall": "npx simple-git-hooks"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.13.0",

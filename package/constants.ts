@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:21
- * @LastEditTime: 2025-03-04 16:42:11
+ * @LastEditTime: 2025-03-04 17:04:40
  * @LastEditors: Lu
  * @Description:
  */
@@ -13,6 +13,9 @@ export const EVENTS = {
   GET_CONTENT_SCRIPT_REQUEST: 'CET_GET_CONTENT_SCRIPT_REQUEST' as const,
   CS2SP_GET_REQUEST: 'CS2SP_GET_REQUEST' as const,
   CS2BG_GET_REQUEST: 'CS2BG_GET_REQUEST' as const,
+  CS2SP_LOG: 'CS2SP_LOG' as const,
+  CS2BG_LOG: 'CS2BG_LOG' as const,
+  SP2BG_LOG: 'SP2BG_LOG' as const,
 }
 
 export const configures = {
