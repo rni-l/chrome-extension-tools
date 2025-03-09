@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-03-07 16:37:39
+ * @LastEditTime: 2025-03-09 22:31:08
  * @LastEditors: Lu
  * @Description: ok
  */
@@ -20,6 +20,8 @@ import {
   getTestData09,
   getTestData12,
   getTestData13,
+  getTestData15,
+
   tabId1,
   tabUrl1,
   testData0,
@@ -45,6 +47,7 @@ import {
   testData13Result,
   testData14,
   testData14Result,
+  testData15Result,
   testData21,
   testData21Result,
 } from './test-data'
@@ -257,6 +260,12 @@ describe('工作流：Actuator', () => {
       const logs = await ins.run()
       expect(logs).toMatchObject(testData11Result)
     })
+    it('设置 skipLoopFail，子任务返回失败，则该轮循环结束，进行下一轮循环', async () => {
+      targetData = getTestData15()
+      const ins = new CetActuator(targetData)
+      const logs = await ins.run({ skipLoopFail: true })
+      expect(logs).toMatchObject(testData15Result)
+    })
     it('子任务也支持 retryNumber', async () => {
       targetData = getTestData12()
       const ins = new CetActuator(targetData)
@@ -266,7 +275,7 @@ describe('工作流：Actuator', () => {
     it('子任务也支持 csRetryNumber', async () => {
       targetData = getTestData13()
       const ins = new CetActuator(targetData)
-      const logs = await ins.run()
+      const logs = await ins.run({ skipLoopFail: true })
       expect(logs).toMatchObject(testData13Result)
     })
     it('支持多层级', async () => {

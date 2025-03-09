@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:06:05
- * @LastEditTime: 2025-02-08 01:08:14
+ * @LastEditTime: 2025-03-09 22:32:23
  * @LastEditors: Lu
  * @Description:
  */
@@ -203,6 +203,83 @@ export const testData14Result: CetActuatorResultItem[] = [
   {
     ...testData0Result,
     name: 'test022',
+  },
+  {
+    ...testData0Result,
+    name: 'test1',
+  },
+]
+
+export function getTestData15(): CetWorkFlowConfigure[] {
+  let i = 0
+  return [
+    { ...testData0[0], name: 'test0', loopData: [
+      {
+        name: 'a1',
+        value: 'a1',
+      },
+      {
+        name: 'a2',
+        value: 'a2',
+      },
+    ], children: [
+      {
+        ...testData0[0],
+        name: 'test01',
+        spBeforeFn: async () => {
+          if (i === 0) {
+            i += 1
+            return { next: false }
+          }
+          return { next: true, data: 1 }
+        },
+      },
+      {
+        ...testData0[0],
+        name: 'test02',
+      },
+      {
+        ...testData0[0],
+        name: 'test03',
+        spBeforeFn: async () => ({ next: true }),
+      },
+      {
+        ...testData0[0],
+        name: 'test04',
+      },
+    ] },
+    { ...testData0[0], name: 'test1' },
+  ]
+}
+
+export const testData15Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    name: 'test0',
+  },
+  {
+    ...omit(testData0Result, ['csFn', 'spAfterFn']),
+    name: 'test01',
+    spBeforeFn: { next: false },
+    success: false,
+  },
+  {
+    ...testData0Result,
+    name: 'test01',
+  },
+  {
+    ...testData0Result,
+    name: 'test02',
+  },
+  {
+    ...testData0Result,
+    name: 'test03',
+    spBeforeFn: { next: true },
+    success: true,
+  },
+  {
+    ...testData0Result,
+    name: 'test04',
   },
   {
     ...testData0Result,

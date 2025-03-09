@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-03-07 16:47:08
+ * @LastEditTime: 2025-03-09 22:34:58
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetTaskRunOptions, CetWorkFlowConfigure } from '../types'
+import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetActuatorRunOptions, CetTaskRunOptions, CetWorkFlowConfigure } from '../types'
 import type { CetTask, TCetTask } from './tasks'
 import { SimpleStack } from '../utils'
 import { findParentTask, findTaskByIndexPath, getTaskTree } from './tasks'
@@ -72,7 +72,7 @@ export class CetActuator {
     return result
   }
 
-  async run(userOption?: Record<string, any>): Promise<CetActuatorResultItem[]> {
+  async run(runOptions?: CetActuatorRunOptions, userOption?: Record<string, any>): Promise<CetActuatorResultItem[]> {
     if (this.checkIsSameName(this.configures)) {
       console.log('error')
       throw new Error('name 不能重复')
@@ -83,8 +83,6 @@ export class CetActuator {
       userOption,
     }
     const actuatorCacheMap = this.getActuatorCache(this.configures)
-    // const tasks = this.getTasks(options)
-    // const targetConfigureName = this.configures[0].name
     const { rootTask, nameMap } = getTaskTree(this.configures)
     let targetTask: TCetTask | undefined = rootTask
     let isCurrentChild = false // 当前节点是否子级
@@ -103,9 +101,9 @@ export class CetActuator {
         targetTask.setTabId(tabId)
       }
       this.params.taskBeforeCb?.(targetTask, cache, options)
-      const result = await targetTask.run(cache, options)
-      this.params.taskAfterCb?.(targetTask, result, options.logItem)
-      if (cache.isRetry && !result) {
+      const isRunOk = await targetTask.run(cache, options)
+      this.params.taskAfterCb?.(targetTask, isRunOk, options.logItem)
+      if (cache.isRetry && !isRunOk) {
         cache.currentRetryNumber++
         if (cache.currentRetryNumber <= cache.retryNumber) {
           // TODO: 不同层级切换，需要初始化配置
@@ -119,30 +117,58 @@ export class CetActuator {
         }
       }
       options.logItem && logs.push(options.logItem)
-      // 失败，中断执行
-      // TODO: 循环中的失败，下一个循环继续
-      if (!result) {
+      // 失败
+      // 如果配置了 skipLoopFail = true 并且当前是子层级的，则不中断执行
+      const isSkipLoopFail = !!runOptions?.skipLoopFail && isLoop
+      console.log('isSkipLoopFail', isSkipLoopFail, isRunOk)
+      if (!isSkipLoopFail && !isRunOk) {
         break
       }
       let nextTask: CetTask | undefined
-      // 检查是否有子级
-      if (targetTask.hasChildren) {
-        // 开启循环
-        isCurrentChild = true
-        nextTask = targetTask.children[0]
+      if (isRunOk) {
+        // 检查是否有子级
+        if (targetTask.hasChildren) {
+          // 开启循环
+          isCurrentChild = true
+          nextTask = targetTask.children[0]
+        }
+        else {
+          nextTask = findTaskByIndexPath(rootTask, targetTask.nextTaskPath)
+        }
+        // 如果找不到 nextTask，则会检查，下面检查还是没有的话，就会终止循环
+        if (!nextTask) {
+          // console.log('not found nextTask2', isLoop, currentLoopIndexStack.peek(), targetTask.parentLoopData!.length - 1)
+          if (isLoop && (currentLoopIndexStack.peek() || 0) < targetTask.parentLoopData!.length - 1) {
+            // 循环完毕，检查 loopIndex 是否在最后一个，如果不是则继续走
+            // 如果是最后一个，则回到父级
+            currentLoopIndexStack.peekAdd()
+            nextTask = findTaskByIndexPath(rootTask, [...targetTask.indexPath.slice(0, -1), 0])!
+          }
+          else if (isCurrentChild && targetTask.isCurrentLast) {
+            // 不会出现当前时子级 && 没有下一级 && 不是最后一个的情况
+            // 检查当前是否循环 && 最后一个
+            // 循环完毕，回到父级
+            nextTask = findParentTask(rootTask, targetTask.indexPath.slice(0, -1))
+            if (!nextTask) {
+              break
+            }
+            isCurrentChild = nextTask.level !== 1
+          }
+          else {
+            break
+          }
+        }
       }
-      else {
-        nextTask = findTaskByIndexPath(rootTask, targetTask.nextTaskPath)
-      }
-      if (!nextTask) {
-        // console.log('not found nextTask2', isLoop, currentLoopIndexStack.peek(), targetTask.parentLoopData!.length - 1)
-        if (isLoop && (currentLoopIndexStack.peek() || 0) < targetTask.parentLoopData!.length - 1) {
+      else if (isSkipLoopFail) {
+        // 执行失败，但配置了 skipLoopFail = true
+        // 直接找到当前循环节点的父级
+        if ((currentLoopIndexStack.peek() || 0) < targetTask.parentLoopData!.length - 1) {
           // 循环完毕，检查 loopIndex 是否在最后一个，如果不是则继续走
           // 如果是最后一个，则回到父级
           currentLoopIndexStack.peekAdd()
           nextTask = findTaskByIndexPath(rootTask, [...targetTask.indexPath.slice(0, -1), 0])!
         }
-        else if (isCurrentChild && targetTask.isCurrentLast) {
+        else {
           // 不会出现当前时子级 && 没有下一级 && 不是最后一个的情况
           // 检查当前是否循环 && 最后一个
           // 循环完毕，回到父级
@@ -152,11 +178,11 @@ export class CetActuator {
           }
           isCurrentChild = nextTask.level !== 1
         }
-        else {
-          break
-        }
       }
-      // isLoop = !!nextTask.configure.loopData && nextTask.configure.loopData.length > 0
+      console.log(nextTask?.name, nextTask?.isLoopItem)
+      if (!nextTask) {
+        break
+      }
       isLoop = nextTask.isLoopItem
       // console.log(nextTask.name, isLoop)
       // 往下走

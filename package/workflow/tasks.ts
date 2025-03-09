@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-07 16:36:41
+ * @LastEditTime: 2025-03-09 15:27:20
  * @LastEditors: Lu
  * @Description:
  */
@@ -84,7 +84,8 @@ export class CetTask {
       success: false,
     }
     const commonParams: CetCommonParams = {
-      isFirstLevel: this.level === 0,
+      // 因为第一个节点是 root（虚拟的），所以 level 从 1 开始
+      isFirstLevel: this.level === 1,
       name: this.name,
       tabId: this.tabId,
       userOption: options.userOption || {},

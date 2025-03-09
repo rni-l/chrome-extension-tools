@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-06 16:12:42
+ * @LastEditTime: 2025-03-09 15:22:53
  * @LastEditors: Lu
  * @Description:
  */
@@ -105,6 +105,10 @@ export interface CetActuatorParams {
   getTabId?: (targetTask: TCetTask, currentCache: CetActuatorCache, options: CetTaskRunOptions) => Promise<number>
   taskBeforeCb?: (task: TCetTask, cache: CetActuatorCache, options: CetTaskRunOptions) => void
   taskAfterCb?: (task: TCetTask, result: boolean, logItem: CetActuatorResultItem | undefined) => void
+}
+
+export interface CetActuatorRunOptions {
+  skipLoopFail?: boolean
 }
 
 export interface CetTaskRunOptions {
