@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-05 15:38:22
- * @LastEditTime: 2025-02-13 10:32:14
+ * @LastEditTime: 2025-03-09 22:43:07
  * @LastEditors: Lu
  * @Description:
  */
@@ -272,6 +272,36 @@ export const testData09Result: CetActuatorResultItem[] = [
     csFn: {
       next: true,
       data: { paramsRetryNumber: 2 },
+    },
+  },
+]
+
+export function getTestData010(): CetWorkFlowConfigure[] {
+  return [
+    { ...testData0[0], spBeforeFn: async (params) => {
+      return { next: true, data: params.userOption?.name }
+    }, spAfterFn: async (params) => {
+      return { next: true, data: params.userOption?.name }
+    }, csFn: async (params) => {
+      return { next: true, data: params.userOption?.name }
+    } },
+  ]
+}
+export const testData010Result: CetActuatorResultItem[] = [
+  {
+    ...testData0Result,
+    success: true,
+    spBeforeFn: {
+      next: true,
+      data: 'test',
+    },
+    csFn: {
+      next: true,
+      data: 'test',
+    },
+    spAfterFn: {
+      next: true,
+      data: 'test',
     },
   },
 ]

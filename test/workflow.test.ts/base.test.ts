@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:04:12
- * @LastEditTime: 2025-03-09 22:31:08
+ * @LastEditTime: 2025-03-09 22:43:24
  * @LastEditors: Lu
  * @Description: ok
  */
@@ -18,10 +18,11 @@ import {
   getTestData07,
   getTestData08,
   getTestData09,
+  getTestData010,
   getTestData12,
   getTestData13,
-  getTestData15,
 
+  getTestData15,
   tabId1,
   tabUrl1,
   testData0,
@@ -41,6 +42,7 @@ import {
   testData07Result,
   testData08Result,
   testData09Result,
+  testData010Result,
   testData11,
   testData11Result,
   testData12Result,
@@ -244,6 +246,12 @@ describe('工作流：Actuator', () => {
       const ins = new CetActuator(targetData)
       const logs = await ins.run()
       expect(logs).toMatchObject(testData09Result)
+    })
+    it('支持传入自定义参数', async () => {
+      targetData = getTestData010()
+      const ins = new CetActuator(targetData)
+      const logs = await ins.run({}, { name: 'test' })
+      expect(logs).toMatchObject(testData010Result)
     })
   })
 
