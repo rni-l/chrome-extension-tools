@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-09 22:58:20
+ * @LastEditTime: 2025-03-10 22:14:22
  * @LastEditors: Lu
  * @Description:
  */
@@ -88,8 +88,11 @@ export interface CetWorkFlowConfigure {
 export interface CetNextTimeFn {
   (): number
 }
-
-export interface CetActuatorResultItem {
+export interface CetActuatorResult {
+  logs: CetActuatorResultLogItem[]
+  success: boolean
+}
+export interface CetActuatorResultLogItem {
   name: string
   spBeforeFn?: CetSpFnResult<any>
   csFn?: CetCsFnResult<any>
@@ -99,10 +102,10 @@ export interface CetActuatorResultItem {
 
 export interface CetActuatorParams {
   nextTime?: number | CetNextTimeFn
-  callback?: (result: CetActuatorResultItem[]) => void
+  callback?: (result: CetActuatorResultLogItem[]) => void
   getTabId?: (targetTask: TCetTask, currentCache: CetActuatorCache, options: CetTaskRunOptions) => Promise<number>
   taskBeforeCb?: (task: TCetTask, cache: CetActuatorCache, options: CetTaskRunOptions) => void
-  taskAfterCb?: (task: TCetTask, result: boolean, logItem: CetActuatorResultItem | undefined) => void
+  taskAfterCb?: (task: TCetTask, result: boolean, logItem: CetActuatorResultLogItem | undefined) => void
 }
 
 export interface CetActuatorRunOptions {
@@ -110,7 +113,7 @@ export interface CetActuatorRunOptions {
 }
 
 export interface CetTaskRunOptions {
-  logItem: CetActuatorResultItem | undefined
+  logItem: CetActuatorResultLogItem | undefined
   currentLoopData?: CetLoopDataItem
   currentLoopIndex?: number
   userOption?: Record<string, any>

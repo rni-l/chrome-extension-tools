@@ -5,7 +5,7 @@
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorResultItem, CetWorkFlowConfigure } from '../../../package/types'
+import type { CetActuatorResultLogItem, CetWorkFlowConfigure } from '../../../package/types'
 import { omit } from 'lodash-es'
 import { tabId1, tabUrl1 } from './common'
 
@@ -24,7 +24,7 @@ export const testData0: CetWorkFlowConfigure[] = [
   },
 ]
 
-export const testData0Result: CetActuatorResultItem = {
+export const testData0Result: CetActuatorResultLogItem = {
   name: 'test',
   success: true,
   spBeforeFn: {
@@ -69,7 +69,7 @@ const csFnParams = { isFirstLevel: true, spBeforeFnResult: {
   data: { spBeforeParams },
 } }
 
-export const testData01Result: CetActuatorResultItem = {
+export const testData01Result: CetActuatorResultLogItem = {
   name: 'test1',
   success: true,
   spBeforeFn: {
@@ -111,7 +111,7 @@ export const testData02: CetWorkFlowConfigure[] = [
   ...testData0,
   ...testData01,
 ]
-export const testData02Result: CetActuatorResultItem[] = [
+export const testData02Result: CetActuatorResultLogItem[] = [
   testData0Result,
   testData01Result,
 ]
@@ -131,7 +131,7 @@ export function getTestData03(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData03Result: CetActuatorResultItem[] = [
+export const testData03Result: CetActuatorResultLogItem[] = [
   { ...testData0Result, name: 't0' },
   { ...testData0Result, name: 't1' },
   { ...testData0Result, name: 't1' },
@@ -150,7 +150,7 @@ export function getTestData04(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData04Result: CetActuatorResultItem[] = [
+export const testData04Result: CetActuatorResultLogItem[] = [
   testData0Result,
 ]
 
@@ -163,7 +163,7 @@ export function getTestData05(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData05Result: CetActuatorResultItem[] = [
+export const testData05Result: CetActuatorResultLogItem[] = [
   {
     ...omit(testData0Result, ['spAfterFn']),
     success: false,
@@ -183,7 +183,7 @@ export function getTestData06(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData06Result: CetActuatorResultItem[] = [
+export const testData06Result: CetActuatorResultLogItem[] = [
   {
     ...omit(testData0Result, ['csFn', 'spAfterFn']),
     success: false,
@@ -204,7 +204,7 @@ export function getTestData07(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData07Result: CetActuatorResultItem[] = [
+export const testData07Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     success: true,
@@ -236,7 +236,7 @@ export function getTestData08(): CetWorkFlowConfigure[] {
     },
   ]
 }
-export const testData08Result: CetActuatorResultItem[] = [
+export const testData08Result: CetActuatorResultLogItem[] = [
   {
     ...omit(testData0Result, ['csFn', 'spAfterFn']),
     success: true,
@@ -265,7 +265,7 @@ export function getTestData09(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData09Result: CetActuatorResultItem[] = [
+export const testData09Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     success: true,
@@ -287,7 +287,7 @@ export function getTestData010(): CetWorkFlowConfigure[] {
     } },
   ]
 }
-export const testData010Result: CetActuatorResultItem[] = [
+export const testData010Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     success: true,

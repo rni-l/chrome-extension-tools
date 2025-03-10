@@ -5,7 +5,7 @@
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorResultItem, CetLoopDataItem, CetWorkFlowConfigure } from 'package/types'
+import type { CetActuatorResultLogItem, CetLoopDataItem, CetWorkFlowConfigure } from 'package/types'
 import { tabId1, tabUrl1 } from './common'
 import { testData0, testData0Result } from './test0'
 
@@ -37,7 +37,7 @@ export const testData2: CetWorkFlowConfigure[] = [
   },
   { ...testData0[0], name: 'test1' },
 ]
-function getTestData2ItemResult(name: string, currentLoopData: CetLoopDataItem, currentLoopIndex: number): CetActuatorResultItem {
+function getTestData2ItemResult(name: string, currentLoopData: CetLoopDataItem, currentLoopIndex: number): CetActuatorResultLogItem {
   return {
     name,
     success: true,
@@ -67,7 +67,7 @@ function getTestData2ItemResult(name: string, currentLoopData: CetLoopDataItem, 
   }
 }
 
-export const testData2Result: CetActuatorResultItem[] = [
+export const testData2Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -131,7 +131,7 @@ export const testData21: CetWorkFlowConfigure[] = [
   { ...testData0[0], name: 'test1' },
 ]
 
-export const testData21Result: CetActuatorResultItem[] = [
+export const testData21Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',

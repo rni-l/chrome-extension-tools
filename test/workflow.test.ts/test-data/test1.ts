@@ -5,7 +5,7 @@
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorResultItem, CetWorkFlowConfigure } from 'package/types'
+import type { CetActuatorResultLogItem, CetWorkFlowConfigure } from 'package/types'
 import { omit } from 'lodash-es'
 import { tabId1, tabUrl1 } from './common'
 import { testData0, testData0Result } from './test0'
@@ -24,7 +24,7 @@ export const testData1: CetWorkFlowConfigure[] = [
   { ...testData0[0], name: 'test1' },
 ]
 
-export const testData1Result: CetActuatorResultItem[] = [
+export const testData1Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -57,7 +57,7 @@ export const testData11: CetWorkFlowConfigure[] = [
   { ...testData0[0], name: 'test1' },
 ]
 
-export const testData11Result: CetActuatorResultItem[] = [
+export const testData11Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -93,7 +93,7 @@ export function getTestData12(): CetWorkFlowConfigure[] {
   ]
 }
 
-export const testData12Result: CetActuatorResultItem[] = [
+export const testData12Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -130,7 +130,7 @@ export function getTestData13(): CetWorkFlowConfigure[] {
   ]
 }
 
-export const testData13Result: CetActuatorResultItem[] = [
+export const testData13Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -179,7 +179,7 @@ export const testData14: CetWorkFlowConfigure[] = [
   { ...testData0[0], name: 'test1' },
 ]
 
-export const testData14Result: CetActuatorResultItem[] = [
+export const testData14Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',
@@ -252,7 +252,7 @@ export function getTestData15(): CetWorkFlowConfigure[] {
   ]
 }
 
-export const testData15Result: CetActuatorResultItem[] = [
+export const testData15Result: CetActuatorResultLogItem[] = [
   {
     ...testData0Result,
     name: 'test0',

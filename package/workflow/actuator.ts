@@ -1,11 +1,11 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-03-09 22:45:10
+ * @LastEditTime: 2025-03-10 22:15:20
  * @LastEditors: Lu
  * @Description:
  */
-import type { CetActuatorCache, CetActuatorParams, CetActuatorResultItem, CetActuatorRunOptions, CetTaskRunOptions, CetWorkFlowConfigure } from '../types'
+import type { CetActuatorCache, CetActuatorParams, CetActuatorResult, CetActuatorResultLogItem, CetActuatorRunOptions, CetTaskRunOptions, CetWorkFlowConfigure } from '../types'
 import type { CetTask, TCetTask } from './tasks'
 import { SimpleStack } from '../utils'
 import { findParentTask, findTaskByIndexPath, getTaskTree } from './tasks'
@@ -72,11 +72,11 @@ export class CetActuator {
     return result
   }
 
-  async run(runOptions?: CetActuatorRunOptions, userOption?: Record<string, any>): Promise<CetActuatorResultItem[]> {
+  async run(runOptions?: CetActuatorRunOptions, userOption?: Record<string, any>): Promise<CetActuatorResult> {
     if (this.checkIsSameName(this.configures)) {
       throw new Error('name 不能重复')
     }
-    const logs: CetActuatorResultItem[] = []
+    const logs: CetActuatorResultLogItem[] = []
     const options: CetTaskRunOptions = {
       logItem: undefined,
       userOption,
@@ -87,6 +87,7 @@ export class CetActuator {
     let isCurrentChild = false // 当前节点是否子级
     let currentLevel = 1
     let isLoop = false // 当前节点是否循环
+    let success = true
     const currentLoopIndexStack = new SimpleStack()
     while (targetTask) {
       if (targetTask.isRoot) {
@@ -120,6 +121,7 @@ export class CetActuator {
       // 如果配置了 skipLoopFail = true 并且当前是子层级的，则不中断执行
       const isSkipLoopFail = !!runOptions?.skipLoopFail && isLoop
       if (!isSkipLoopFail && !isRunOk) {
+        success = false
         break
       }
       let nextTask: CetTask | undefined
@@ -172,6 +174,7 @@ export class CetActuator {
           // 循环完毕，回到父级
           nextTask = findParentTask(rootTask, targetTask.indexPath.slice(0, -1))
           if (!nextTask) {
+            success = false
             break
           }
           isCurrentChild = nextTask.level !== 1
@@ -179,6 +182,7 @@ export class CetActuator {
       }
       // console.log(nextTask?.name, nextTask?.isLoopItem)
       if (!nextTask) {
+        success = false
         break
       }
       isLoop = nextTask.isLoopItem
@@ -209,6 +213,9 @@ export class CetActuator {
       targetTask = nextTask
     }
     this.params.callback?.(logs)
-    return logs
+    return {
+      logs,
+      success,
+    }
   }
 }
