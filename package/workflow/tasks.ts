@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-09 15:27:20
+ * @LastEditTime: 2025-03-09 22:58:30
  * @LastEditors: Lu
  * @Description:
  */
@@ -10,6 +10,7 @@ import type {
   CetActuatorCache,
   CetCommonParams,
   CetCsFnResult,
+  CetCsFnResultInTask,
   CetLoopDataItem,
   CetSpFnResult,
   CetTaskRunOptions,
@@ -104,10 +105,10 @@ export class CetTask {
     if (!spBeforeResult || !spBeforeResult.next) {
       return false
     }
-    const csResult: CetCsFnResult = getCommonCsResult()
+    const csResult: CetCsFnResultInTask = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        const { data } = await sendMsgBySP<CsFnParams, CetCsFnResult>(EVENTS.SP2CS_EXECUTE_TASK, {
+        const { data } = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
@@ -116,17 +117,10 @@ export class CetTask {
           destination: CetDestination.CS,
           tabId: this.tabId,
         })
-        console.log('msgResult', data)
         csResult.tabId = data?.tabId
-        // TODO：获取 tabUrl
         csResult.tabUrl = data?.tabUrl
         csResult.data = data?.data
         csResult.next = !!data?.next
-        // csResult.tabId = msgResult.tabId
-        // // TODO：获取 tabUrl
-        // csResult.tabUrl = msgResult.tabUrl
-        // csResult.data = msgResult.data?.data
-        // csResult.next = msgResult.success && !!msgResult.data?.next
         return csResult.next
       }, (configure.csRetryNumber || 0) + 1, configure.csRetryInterval || 1000)
     }

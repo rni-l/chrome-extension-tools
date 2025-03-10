@@ -1,12 +1,12 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-03-06 16:30:27
+ * @LastEditTime: 2025-03-10 22:10:57
  * @LastEditors: Lu
  * @Description:
  */
 
-import type { CetLogEntry, CetWorkFlowConfigure, CsFnParams } from '../types'
+import type { CetCsFnResultInTask, CetLogEntry, CetWorkFlowConfigure, CsFnParams } from '../types'
 import { cetBGLogger, cetCSLogger, cetSPLogger } from '../components/logger'
 import { EVENTS } from '../constants'
 import { onMsgInBG, onMsgInCS, onMsgInSP, sendMsgByCS } from '../message'
@@ -20,21 +20,23 @@ export function initBackground() {
   onMsgInBG<CetLogEntry>(EVENTS.CS2BG_LOG, async (data) => {
     console.log(EVENTS.CS2BG_LOG, data)
     cetBGLogger.log(data)
+    return true
   })
   onMsgInBG<CetLogEntry>(EVENTS.SP2BG_LOG, async (data) => {
     cetBGLogger.log(data)
+    return true
   })
   onMsgInBG<chrome.tabs.Tab>(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
     cetBGLogger.info('bg SP2BG_GET_CURRENT_TAB: ')
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
     cetBGLogger.info('bg SP2BG_GET_CURRENT_TAB RESULT: ', serializeJSON(tabs))
-    return tabs[0]
+    return tabs?.[0]
   })
   onMsgInBG<chrome.tabs.Tab>(EVENTS.CS2BG_GET_CURRENT_TAB, async () => {
     cetBGLogger.info('bg CS2BG_GET_CURRENT_TAB: ')
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
     cetBGLogger.info('bg CS2BG_GET_CURRENT_TAB RESULT: ', serializeJSON(tabs))
-    return tabs[0]
+    return tabs?.[0]
   })
 }
 
@@ -63,7 +65,7 @@ export function initContentScriptRequest() {
   }, false)
 }
 
-export function initContentScriptTask(configures?: CetWorkFlowConfigure[]) {
+export async function initContentScriptTask(configures?: CetWorkFlowConfigure[]) {
   if (!configures) {
     return
   }
@@ -71,8 +73,15 @@ export function initContentScriptTask(configures?: CetWorkFlowConfigure[]) {
     cetCSLogger.info('SP2CS_EXECUTE_TASK: ', serializeJSON(res))
     const target = findDeepTargetByName(configures, res.name)
     if (target && target.csFn) {
+      const { data: tab } = await sendMsgByCS<undefined, chrome.tabs.Tab>(EVENTS.CS2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG })
       const csResult = await target.csFn(res)
-      return csResult
+      return {
+        data: csResult?.data,
+        next: !!csResult?.next,
+        retryTarget: csResult?.retryTarget,
+        tabId: tab?.id,
+        tabUrl: tab?.url,
+      } as CetCsFnResultInTask
     }
     else {
       cetCSLogger.info('SP2CS_EXECUTE_TASK: ', res.name, ' not found')

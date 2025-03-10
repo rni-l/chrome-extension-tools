@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-09 15:22:53
+ * @LastEditTime: 2025-03-09 22:58:20
  * @LastEditors: Lu
  * @Description:
  */
@@ -39,10 +39,8 @@ export interface CetCsFnResult<T = unknown> {
   next: boolean
   data?: T
   retryTarget?: string
-  tabId?: number
-  tabUrl?: string
 }
-export interface CetCsFnResultInCs<T = unknown> extends CetCsFnResult<T> {
+export interface CetCsFnResultInTask<T = unknown> extends CetCsFnResult<T> {
   tabId?: number
   tabUrl?: string
 }
@@ -66,10 +64,10 @@ export interface CetSpAfterFn<T = unknown> {
 export interface CetCsFn<T = unknown> {
   (params: CsFnParams): Promise<CetCsFnResult<T>>
 }
-// 在 content script 执行的 csFn 返回值
-export interface CetCsFnInCs<T = unknown> {
-  (params: CsFnParams): Promise<CetCsFnResultInCs<T>>
-}
+// // 在 content script 执行的 csFn 返回值
+// export interface CetCsFnInCs<T = unknown> {
+//   (params: CsFnParams): Promise<CetCsFnResultInTask<T>>
+// }
 
 export interface CetWorkFlowConfigure {
   name: string

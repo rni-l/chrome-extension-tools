@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-03-09 22:34:58
+ * @LastEditTime: 2025-03-09 22:45:10
  * @LastEditors: Lu
  * @Description:
  */
@@ -74,7 +74,6 @@ export class CetActuator {
 
   async run(runOptions?: CetActuatorRunOptions, userOption?: Record<string, any>): Promise<CetActuatorResultItem[]> {
     if (this.checkIsSameName(this.configures)) {
-      console.log('error')
       throw new Error('name 不能重复')
     }
     const logs: CetActuatorResultItem[] = []
@@ -120,7 +119,6 @@ export class CetActuator {
       // 失败
       // 如果配置了 skipLoopFail = true 并且当前是子层级的，则不中断执行
       const isSkipLoopFail = !!runOptions?.skipLoopFail && isLoop
-      console.log('isSkipLoopFail', isSkipLoopFail, isRunOk)
       if (!isSkipLoopFail && !isRunOk) {
         break
       }
@@ -179,7 +177,7 @@ export class CetActuator {
           isCurrentChild = nextTask.level !== 1
         }
       }
-      console.log(nextTask?.name, nextTask?.isLoopItem)
+      // console.log(nextTask?.name, nextTask?.isLoopItem)
       if (!nextTask) {
         break
       }
@@ -211,7 +209,6 @@ export class CetActuator {
       targetTask = nextTask
     }
     this.params.callback?.(logs)
-    console.log('end')
     return logs
   }
 }
