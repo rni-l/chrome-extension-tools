@@ -1,7 +1,9 @@
 // @ts-nocheck
 
+
 export function initInterceptRequest() {
   console.log('inject script')
+  const TYPE = 'CET_GET_CONTENT_SCRIPT_REQUEST'
   // xhr中的方法拦截，eg: open、send etc.
   function hookFunction(funcName, config) {
     return function () {
@@ -97,9 +99,10 @@ export function initInterceptRequest() {
     // return true // 返回true将终止请求，这个就是常规拦截的精髓了
     },
     onload(xhr) {
+      // console.log(xhr)
     // 对响应结果做处理
       window.postMessage({
-        type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+        type: TYPE,
         data: {
           url: xhr.open_args[1],
           method: xhr.open_args[0],
@@ -111,10 +114,11 @@ export function initInterceptRequest() {
       })
     },
     onreadystatechange(xhr) {
+      // console.log(xhr)
     // 对响应结果做处理
       if (xhr && xhr.readyState === 4) {
         window.postMessage({
-          type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+          type: TYPE,
           data: {
             url: xhr.open_args[1],
             method: xhr.open_args[0],
@@ -127,10 +131,10 @@ export function initInterceptRequest() {
       }
     },
     onloadend(xhr) {
-      console.log(xhr)
+      // console.log(xhr)
       // 对响应结果做处理
       window.postMessage({
-        type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+        type: TYPE,
         data: {
           url: xhr._url || xhr.open_args[1],
           method: xhr.open_args[0],
@@ -157,7 +161,7 @@ export function initInterceptRequest() {
         responseClone.json().then((json) => {
           // console.log('capture fetch successful', url)
           window.postMessage({
-            type: 'CET_GET_CONTENT_SCRIPT_REQUEST',
+            type,
             data: JSON.parse(JSON.stringify({
               url,
               method: options?.method,

@@ -1,8 +1,10 @@
 import { injectInterceptRequest } from '../../package/utils'
 
 const targetDomains: string[] = [
+  'https://www.baidu.com/*',
 ]
 const checkDomains: string[] = [
+  'https://www.baidu.com',
 ]
 function injectInterceptRequestBg() {
   console.log('injectInterceptRequestBg')

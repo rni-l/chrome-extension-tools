@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:21
- * @LastEditTime: 2025-03-04 17:04:40
+ * @LastEditTime: 2025-03-10 22:54:14
  * @LastEditors: Lu
  * @Description:
  */
@@ -16,6 +16,7 @@ export const EVENTS = {
   CS2SP_LOG: 'CS2SP_LOG' as const,
   CS2BG_LOG: 'CS2BG_LOG' as const,
   SP2BG_LOG: 'SP2BG_LOG' as const,
+  SP2BG_INJECT_INTERCEPT_REQUEST: 'SP2BG_INJECT_INTERCEPT_REQUEST' as const,
 }
 
 export const configures = {

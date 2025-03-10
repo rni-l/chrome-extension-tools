@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { EVENTS } from '../../../package/constants';
 import { task1Configure } from '../../configure/task1';
-import { findDeepTargetByName } from '../../../package/utils';
 import { sendMsgByCS, onMsgInCS } from '../../../package/message';
-import { initContentScriptRequest } from '../../../package/workflow';
+import { initContentScriptRequest, initContentScriptTask } from '../../../package/workflow';
 import { CetDestination } from '../../../package/types';
 import { toggleDebug } from '../../../package/constants';
 
@@ -38,6 +37,8 @@ onMounted(async () => {
   await getTab()
   // sendMsg2()
 })
+initContentScriptRequest()
+initContentScriptTask(task1Configure)
 </script>
 
 <template>

@@ -161,17 +161,32 @@ import { initInterceptRequest } from 'chrome-extension-tools'
 initInterceptRequest()
 ```
 
-第二，修改 vite 构建配置：
+第二，新增 vite 构建配置，并在 package.json 配置相关命令：
 
 ```typescript
-{
+ort { defineConfig } from 'vite'
+import packageJson from './package.json'
+import { isDev, r } from './scripts/utils'
+import { sharedConfig } from './vite.config.dev.mjs'
+
+// bundling the content script using Vite
+export default defineConfig({
+  ...sharedConfig,
+  define: {
+    '__DEV__': isDev,
+    '__NAME__': JSON.stringify(packageJson.name),
+    'process.env.NODE_ENV': JSON.stringify(isDev ? 'development' : 'production'),
+  },
   build: {
-    // ...
+    watch: isDev
+      ? {}
+      : undefined,
+    outDir: r('extension/dist/background'),
+    cssCodeSplit: false,
+    emptyOutDir: false,
+    sourcemap: isDev ? 'inline' : false,
     lib: {
-      entry: [
-        r('src/background/main.ts'),
-        r('src/background/intercept-request.ts'),
-      ],
+      entry: r('src/background/intercept-request.ts'),
       name: packageJson.name,
       formats: ['es'],
     },
@@ -188,7 +203,8 @@ initInterceptRequest()
       },
     },
   },
-}
+})
+
 ```
 
 这样 background 区域就会构建两个入口文件。
@@ -230,22 +246,35 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 ```typescript
 // content script
 import { initContentScriptRequest } from 'chrome-extension-tools'
+// 获取接口拦截的信息
 initContentScriptRequest()
 ```
 
 收到数据，会通过消息通知发给 background 和 side panel：
 
 ```typescript
-// initContentScriptRequest code:
-const res = serializeJSON(event.data.data.response)
-const item = {
-  url: event.data.data.url,
-  response: res,
-  requestType: event.data.data.requestType,
-  id: generateTenDigitRandom(),
+import { CetLogEntry, CetLogger, EVENTS, handleResponseData } from 'chrome-extension-tools'
+const logList = ref<CetLogEntry[]>([])
+const cetTest1Logger = new CetLogger()
+cetTest1Logger.logChange = (logs: CetLogEntry[]) => {
+  logList.value = logs.map(v => v)
 }
-sendMsgByCS(EVENTS.CS2SP_GET_REQUEST, item, { destination: CetDestination.SP })
-sendMsgByCS(EVENTS.CS2BG_GET_REQUEST, item, { destination: CetDestination.BG })
+// content script 收到请求后，会通知给 sp
+onMsgInSP(EVENTS.CS2SP_GET_REQUEST, async (data) => {
+  if (!data)
+    return
+  if (typeof data.url !== 'string')
+    return
+  const res = {
+    url: data.url || '',
+    response: handleResponseData(data?.response),
+    data: handleResponseData(data?.data),
+    body: handleResponseData(data?.body),
+    headers: handleResponseData(data?.headers),
+    id: data.id,
+  }
+  cetTest1Logger.info(serializeJSON(res))
+})
 ```
 
 ### 注意事项
@@ -363,4 +392,5 @@ logger.setOptions({
    1. 获取 cookie
 3. ~~单循环如果终结，不应该整个循环结束掉~~
 4. ~~优化工作流的参数~~
-5. tabId 和 tabUrl 的获取逻辑
+5. ~~tabId 和 tabUrl 的获取逻辑~~
+6. 给消息通知添加类型定义

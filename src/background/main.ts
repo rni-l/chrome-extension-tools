@@ -3,7 +3,7 @@ import { initBackground } from '../../package/workflow/index';
 import { EVENTS } from '../../package/constants';
 import { initBGMsgListener, onMsgInBG } from '../../package/message';
 import { checkAndInjectDomain } from './utils.bg';
-import { handleResponseData } from '../../package/utils';
+import { getCurrentTab, handleResponseData } from '../../package/utils';
 // import { cetLogger } from '../../package/components/logger/ins.logger';
 // only on dev mode
 if (import.meta.hot) {
@@ -73,8 +73,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     // console.log('Tab updated:', tab)
     // console.log('URL:', tab.url)
-    // 这里可以执行更多的逻辑处理，例如检查URL是否符合特定模式等
-    checkAndInjectDomain(cacheTabInject, tabId, tab.url)
   }
 })
 
@@ -84,7 +82,6 @@ chrome.tabs.onCreated.addListener((tab) => {
     return
   // console.log('onCreated')
   curTabId = tab.id || 0
-  // checkAndInjectDomain(cacheTabInject, tab.id || 0, tab.url)
 })
 chrome.tabs.onRemoved.addListener((tabId) => {
   // console.log('onRemoved', tabId)
@@ -95,18 +92,6 @@ chrome.tabs.onReplaced.addListener((newTabId, oldTabId) => {
   console.log('tab replaced', newTabId)
 })
 
-// onMessage(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
-//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-//   return tabs[0]
-// })
-// onMessage(EVENTS.CS2BG_GET_CURRENT_TAB, async () => {
-//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-//   return tabs[0]
-// })
-// onMsgInBG(EVENTS.SP2BG_GET_CURRENT_TAB, async () => {
-//   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
-//   return tabs[0]
-// })
 onMsgInBG('to-cs', async () => undefined)
 onMsgInBG('test3', async () => undefined)
 onMsgInBG('task1', async () => undefined)
@@ -115,6 +100,14 @@ onMsgInBG(EVENTS.CS2BG_GET_REQUEST, async (data: any) => {
   console.log(data)
   console.log(data?.url)
   console.log(handleResponseData(data?.response))
+})
+
+onMsgInBG(EVENTS.SP2BG_INJECT_INTERCEPT_REQUEST, async () => {
+  const tab = await getCurrentTab()
+  if (!tab)
+    return false
+  checkAndInjectDomain(cacheTabInject, tab.id || 0, tab?.url)
+  return true
 })
 
 initBGMsgListener()

@@ -2,7 +2,7 @@ import type { CetWorkFlowConfigure } from './types'
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-03-06 16:43:52
+ * @LastEditTime: 2025-03-10 23:33:12
  * @LastEditors: Lu
  * @Description:
  */
@@ -109,6 +109,7 @@ export function injectInterceptRequest(jsPath: string, matches: string[]) {
         matches,
       },
     ], () => {
+      console.log('inject ok')
       resolve(true)
     })
   })
@@ -126,4 +127,13 @@ export function handleResponseData(data: any) {
     return deserializeJSON(data)
   }
   return data
+}
+
+export async function getCurrentTab(windowId?: number) {
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: !windowId,
+    windowId,
+  })
+  return tab
 }

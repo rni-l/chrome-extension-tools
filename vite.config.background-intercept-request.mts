@@ -5,13 +5,6 @@
  * @LastEditors: Lu
  * @Description:
  */
-/*
- * @Author: Lu
- * @Date: 2025-03-06 15:15:01
- * @LastEditTime: 2025-03-06 15:16:28
- * @LastEditors: Lu
- * @Description:
- */
 import { defineConfig } from 'vite'
 import packageJson from './package.json'
 import { isDev, r } from './scripts/utils'

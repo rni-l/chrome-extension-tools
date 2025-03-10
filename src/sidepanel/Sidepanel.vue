@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { CetActuator, initSidePanel } from "../../package/workflow";
-import { task1Configure } from "../configure/task1";
+import { CetActuator, initSidePanel, handleResponseData, serializeJSON } from "../../package/main";
+import { cetTest1Logger, task1Configure } from "../configure/task1";
 import { EVENTS, toggleDebug } from '../../package/constants';
 import { onMsgInSP, sendMsgBySP } from "../../package/message";
-import { CetDestination } from "../../package/types";
+import { CetDestination, CetLogEntry } from "../../package/types";
 // import { cetLogger } from '../../package/components/logger/ins.logger';
 
 // setInterval(() => {
@@ -29,33 +29,30 @@ onMsgInSP('to-sp2', async (data, params) => {
   console.log('to-sp2', data, params)
   return 'ok'
 })
-
-// onMessage("sv2sp", async ({ data }: any) => {
-//   console.log('sv2sp', data)
-//   const tabId = data.tabId
-//   const res = await sendMessage('sp2cs', {
-//     tabId,
-//     message: 'hello from sidepanel',
-//   }, { context: 'content-script', tabId })
-//   console.log(res)
-//   return 'ok'
-// })
-// onMessage('cs2sp', (data: any) => {
-//   console.log(data)
-//   return {
-//     data,
-//     type: 'popup'
-//   }
-// })
-// onMessage("sv2sp", (message) => {
-//   console.log('service message', message)
-//   return 'ok'
-// })
+const logList = ref<CetLogEntry[]>([])
+cetTest1Logger.logChange = (logs: CetLogEntry[]) => {
+  logList.value = logs.map(v => v)
+}
+onMsgInSP(EVENTS.CS2SP_GET_REQUEST, async (data) => {
+  if (!data)
+    return
+  if (typeof data.url !== 'string')
+    return
+  const res = {
+    url: data.url || '',
+    response: handleResponseData(data?.response),
+    data: handleResponseData(data?.data),
+    body: handleResponseData(data?.body),
+    headers: handleResponseData(data?.headers),
+    id: data.id,
+  }
+  cetTest1Logger.info(serializeJSON(res))
+})
 async function startTask1() {
-  console.log('startTask1')
   toggleDebug(true)
   const  {data} = await sendMsgBySP<undefined, chrome.tabs.Tab>(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG }); 
   if (!data?.id) return
+  cetTest1Logger.clearLogs()
   const ins = new CetActuator(task1Configure, {
     getTabId: async () => {
       return data.id as number
@@ -63,6 +60,7 @@ async function startTask1() {
   })
   const result = await ins.run()
   console.log(result)
+  console.log(cetTest1Logger.getLogs())
 }
 </script>
 
