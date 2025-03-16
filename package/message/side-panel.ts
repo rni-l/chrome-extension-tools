@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 22:00:08
- * @LastEditTime: 2025-03-05 14:41:37
+ * @LastEditTime: 2025-03-15 11:07:49
  * @LastEditors: Lu
  * @Description:
  */
@@ -100,7 +100,8 @@ export function sendMsgBySP<T = unknown, R = unknown>(
         msg: 'tabId is required',
       })
     }
-    chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
+    // console.log(messageId, data, option)
+    chrome.runtime.sendMessage({ messageId, data, option }, (response: CetMessageCallbackResult<R>) => {
       if (checkIsNotLog(messageId)) {
         cetSPLogger.info('sp sendMsgBySP', serializeJSON(response))
       }

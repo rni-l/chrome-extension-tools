@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-03-06 15:30:04
+ * @LastEditTime: 2025-03-15 10:52:56
  * @LastEditors: Lu
  * @Description:
  */
@@ -69,7 +69,7 @@ export function sendMsgByCS<T = unknown, R = unknown>(
     if (checkIsNotLog(messageId)) {
       cetCSLogger.info('cs sendMsgByCS', messageId, serializeJSON(data), serializeJSON(option))
     }
-    chrome.runtime.sendMessage({ messageId, data, option }, {}, (response: CetMessageCallbackResult<R>) => {
+    chrome.runtime.sendMessage({ messageId, data, option }, (response: CetMessageCallbackResult<R>) => {
       if (checkIsNotLog(messageId)) {
         cetCSLogger.info('cs sendMsgByCS response', messageId, serializeJSON(response))
       }
