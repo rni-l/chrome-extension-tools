@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-09 22:58:30
+ * @LastEditTime: 2025-03-20 00:40:07
  * @LastEditors: Lu
  * @Description:
  */
@@ -36,6 +36,7 @@ interface ICheckOptions {
   isRoot?: boolean
   isCurrentLast?: boolean
   parentLoopData?: CetLoopDataItem[]
+  getTabId?: () => Promise<number>
 }
 export class CetTask {
   configure: CetWorkFlowConfigure
@@ -50,7 +51,7 @@ export class CetTask {
   isCurrentLast = false
   isLoopItem = false
   parentLoopData: CetLoopDataItem[] = []
-
+  getTabId?: () => Promise<number>
   constructor(configure: CetWorkFlowConfigure, path: number[], checkOptions: ICheckOptions = {}) {
     this.name = configure.name
     this.configure = configure
@@ -67,6 +68,7 @@ export class CetTask {
     this.isCurrentLast = !!checkOptions.isCurrentLast
     this.isLoopItem = !!checkOptions.parentLoopData?.length
     this.parentLoopData = checkOptions.parentLoopData || []
+    this.getTabId = checkOptions.getTabId
   }
 
   setTabId(tabId: number) {
@@ -108,7 +110,7 @@ export class CetTask {
     const csResult: CetCsFnResultInTask = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        const { data } = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, {
+        const res = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
@@ -117,11 +119,17 @@ export class CetTask {
           destination: CetDestination.CS,
           tabId: this.tabId,
         })
+        if (!res) {
+          csResult.data = undefined
+          csResult.next = false
+          return false
+        }
+        const data = res.data
         csResult.tabId = data?.tabId
         csResult.tabUrl = data?.tabUrl
         csResult.data = data?.data
         csResult.next = !!data?.next
-        return csResult.next
+        return true
       }, (configure.csRetryNumber || 0) + 1, configure.csRetryInterval || 1000)
     }
     options.logItem.csFn = csResult

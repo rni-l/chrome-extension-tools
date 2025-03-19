@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-03-10 22:10:57
+ * @LastEditTime: 2025-03-20 00:31:17
  * @LastEditors: Lu
  * @Description:
  */
@@ -75,6 +75,9 @@ export async function initContentScriptTask(configures?: CetWorkFlowConfigure[])
     if (target && target.csFn) {
       const { data: tab } = await sendMsgByCS<undefined, chrome.tabs.Tab>(EVENTS.CS2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG })
       const csResult = await target.csFn(res)
+      if (!csResult) {
+        return
+      }
       return {
         data: csResult?.data,
         next: !!csResult?.next,

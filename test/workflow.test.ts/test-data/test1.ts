@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 11:06:05
- * @LastEditTime: 2025-03-09 22:32:23
+ * @LastEditTime: 2025-03-20 00:29:09
  * @LastEditors: Lu
  * @Description:
  */
@@ -119,7 +119,10 @@ export function getTestData13(): CetWorkFlowConfigure[] {
         return { next: true, data: 1 }
       }, csFn: async () => {
         retryNum += 1
-        return { next: retryNum === 3, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
+        const next = retryNum === 3
+        if (!next)
+          return
+        return { next, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
       }, name: 'test01' },
       {
         ...testData0[0],

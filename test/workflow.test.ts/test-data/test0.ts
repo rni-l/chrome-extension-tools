@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-05 15:38:22
- * @LastEditTime: 2025-03-09 22:43:07
+ * @LastEditTime: 2025-03-20 00:39:35
  * @LastEditors: Lu
  * @Description:
  */
@@ -146,7 +146,10 @@ export function getTestData04(): CetWorkFlowConfigure[] {
       return { next: true, data: 1 }
     }, csFn: async () => {
       retryNum += 1
-      return { next: retryNum === 3, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
+      const next = retryNum === 3
+      if (!next)
+        return
+      return { next, data: 2, tabId: tabId1, tabUrl: tabUrl1 }
     } },
   ]
 }
@@ -159,7 +162,8 @@ export function getTestData05(): CetWorkFlowConfigure[] {
   return [
     { ...testData0[0], csRetryNumber: 2, csRetryInterval: 10, csFn: async () => {
       retryNum += 1
-      return { next: false, data: retryNum }
+      return undefined
+      // return { next: false, data: retryNum }
     } },
   ]
 }
@@ -169,7 +173,6 @@ export const testData05Result: CetActuatorResultLogItem[] = [
     success: false,
     csFn: {
       next: false,
-      data: 3,
     },
   },
 ]
@@ -200,7 +203,8 @@ export function getTestData07(): CetWorkFlowConfigure[] {
   return [
     { ...testData0[0], csRetryNumber: 2, csRetryInterval: 10, skipCsCallbackFail: true, csFn: async () => {
       retryNum += 1
-      return { next: false, data: retryNum }
+      return undefined
+      // return { next: false, data: retryNum }
     } },
   ]
 }
@@ -210,7 +214,7 @@ export const testData07Result: CetActuatorResultLogItem[] = [
     success: true,
     csFn: {
       next: false,
-      data: 3,
+      // data: 3,
     },
   },
 ]
@@ -261,7 +265,10 @@ export function getTestData09(): CetWorkFlowConfigure[] {
   return [
     { ...testData0[0], csRetryNumber: 2, csRetryInterval: 10, skipCsCallbackFail: true, csFn: async (p) => {
       retryNum += 1
-      return { next: retryNum === 3, data: { paramsRetryNumber: p.csRetryNumber } }
+      const next = retryNum === 3
+      if (!next)
+        return
+      return { next, data: { paramsRetryNumber: p.csRetryNumber } }
     } },
   ]
 }

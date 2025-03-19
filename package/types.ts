@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-10 22:14:22
+ * @LastEditTime: 2025-03-20 00:31:35
  * @LastEditors: Lu
  * @Description:
  */
@@ -62,7 +62,7 @@ export interface CetSpAfterFn<T = unknown> {
 }
 // 用户在配置中定义的 csFn
 export interface CetCsFn<T = unknown> {
-  (params: CsFnParams): Promise<CetCsFnResult<T>>
+  (params: CsFnParams): Promise<CetCsFnResult<T> | undefined>
 }
 // // 在 content script 执行的 csFn 返回值
 // export interface CetCsFnInCs<T = unknown> {
