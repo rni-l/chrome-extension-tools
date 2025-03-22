@@ -1,17 +1,17 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:36
- * @LastEditTime: 2025-03-20 00:31:17
+ * @LastEditTime: 2025-03-22 17:56:46
  * @LastEditors: Lu
  * @Description:
  */
 
-import type { CetCsFnResultInTask, CetLogEntry, CetWorkFlowConfigure, CsFnParams } from '../types'
+import type { CetCsFnResultInTask, CetEventRemoveTabParams, CetLogEntry, CetWorkFlowConfigure, CsFnParams } from '../types'
 import { cetBGLogger, cetCSLogger, cetSPLogger } from '../components/logger'
 import { EVENTS } from '../constants'
 import { onMsgInBG, onMsgInCS, onMsgInSP, sendMsgByCS } from '../message'
 import { CetDestination } from '../types'
-import { findDeepTargetByName, serializeJSON } from '../utils'
+import { checkTabStatus, findDeepTargetByName, serializeJSON } from '../utils'
 
 export * from './actuator'
 
@@ -37,6 +37,42 @@ export function initBackground() {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
     cetBGLogger.info('bg CS2BG_GET_CURRENT_TAB RESULT: ', serializeJSON(tabs))
     return tabs?.[0]
+  })
+  // sp 通知 bg 打开 url
+  onMsgInBG<{ url: string }>(EVENTS.EVENT_OPEN_URL_SP2BG, async (data) => {
+    chrome.tabs.create({ url: data.url })
+  })
+  // sp 通知 bg 刷新页面
+  onMsgInBG<number>(EVENTS.EVENT_RELOAD_SP2BG, async (tabId) => {
+    chrome.tabs.reload(tabId)
+  })
+  // sp 通知 bg 重定向 url
+  onMsgInBG<{ url: string, tabId: number }>(EVENTS.EVENT_REDIRECT_URL_SP2BG, async (data) => {
+    chrome.tabs.update(data.tabId, { url: data.url })
+    return true
+  })
+  // sp 通知 bg 移除 tab
+  onMsgInBG<CetEventRemoveTabParams>(EVENTS.EVENT_REMOVE_TAB_SP2BG, async (data) => {
+    setTimeout(() => {
+      chrome.tabs.remove(data.tabId)
+    }, data.pending || 0)
+  })
+  // 获取 Cookie
+  onMsgInBG<string>(EVENTS.EVENT_GET_COOKIES_SP2BG, async (domain) => {
+    return new Promise((res) => {
+      chrome.cookies.getAll({
+        domain,
+      }, (cookies) => {
+        res(cookies)
+      })
+    })
+  })
+  // sp 通知 bg 检查 tab 状态
+  onMsgInBG(EVENTS.EVENT_CHECK_TAB_STATUS_SP2BG, async (params: { tabId: number }) => {
+    if (!params.tabId)
+      return false
+    const result = await checkTabStatus(params.tabId)
+    return result
   })
 }
 

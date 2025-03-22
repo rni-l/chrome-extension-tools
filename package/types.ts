@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-20 00:31:35
+ * @LastEditTime: 2025-03-22 17:54:23
  * @LastEditors: Lu
  * @Description:
  */
@@ -232,4 +232,9 @@ export interface CetLogEntry {
   isSyncToBG?: boolean
   isSyncToSP?: boolean
   isCS?: boolean
+}
+
+export interface CetEventRemoveTabParams {
+  tabId: number
+  pending?: number // 等待时间
 }

@@ -2,7 +2,7 @@ import type { CetWorkFlowConfigure } from './types'
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-03-10 23:33:12
+ * @LastEditTime: 2025-03-22 17:56:36
  * @LastEditors: Lu
  * @Description:
  */
@@ -136,4 +136,28 @@ export async function getCurrentTab(windowId?: number) {
     windowId,
   })
   return tab
+}
+
+export async function checkTabStatus(tabId: number): Promise<boolean> {
+  const result = await new Promise<boolean>((resolve) => {
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError) {
+        resolve(true)
+        return
+      }
+
+      if (!tab) {
+        resolve(true)
+        return
+      }
+
+      const isLoaded = tab.status === 'complete'
+      resolve(isLoaded)
+    })
+  })
+  if (!result) {
+    await asyncSetTimeout(200)
+    return checkTabStatus(tabId)
+  }
+  return result
 }

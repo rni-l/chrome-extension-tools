@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:21
- * @LastEditTime: 2025-03-10 22:54:14
+ * @LastEditTime: 2025-03-22 22:28:43
  * @LastEditors: Lu
  * @Description:
  */
@@ -17,6 +17,12 @@ export const EVENTS = {
   CS2BG_LOG: 'CS2BG_LOG' as const,
   SP2BG_LOG: 'SP2BG_LOG' as const,
   SP2BG_INJECT_INTERCEPT_REQUEST: 'SP2BG_INJECT_INTERCEPT_REQUEST' as const,
+  EVENT_OPEN_URL_SP2BG: 'EVENT_OPEN_URL_SP2BG' as const,
+  EVENT_RELOAD_SP2BG: 'EVENT_RELOAD_SP2BG' as const,
+  EVENT_REDIRECT_URL_SP2BG: 'EVENT_REDIRECT_URL_SP2BG' as const,
+  EVENT_REMOVE_TAB_SP2BG: 'EVENT_REMOVE_TAB_SP2BG' as const,
+  EVENT_GET_COOKIES_SP2BG: 'EVENT_GET_COOKIES_SP2BG' as const,
+  EVENT_CHECK_TAB_STATUS_SP2BG: 'EVENT_CHECK_TAB_STATUS_SP2BG' as const,
 }
 
 export const configures = {
