@@ -2,7 +2,7 @@
 
 ## 简介
 
-封装了日常开发一动化浏览器插件时所用到的组件，比如工作流配置、接口拦截、消息通知、日志和一些工具函数等。
+封装了在开发浏览器插件时所用到的组件，比如工作流配置、接口拦截、消息通知、日志和一些工具函数等。
 
 ## 主要特点
 
@@ -16,6 +16,275 @@
 
 1. 自动化执行网页操作
 2. 获取网页应用的数据
+
+## 消息通信
+
+### 简介
+
+> 目前有很多相关的封装，但这块消息通信的复杂度并不高，为了方便和更适配我的写法，所以我自己重新封装了消息通信的功能。
+
+封装 Chrome Extension 的消息方法，统一 Background, Content Script 和 Side Panel 的消息通信：
+
+1. 统一的消息格式：所有消息具有一致的数据结构，便于处理和调试，简化使用
+2. 双向通信：支持发送消息并接收响应
+3. 类型安全：完整的TypeScript类型支持（未完善）
+
+浏览器的消息通信由三个部分组成：
+
+1. Background(Service) -> sv
+2. Content Script -> cs
+3. popup/Side Panel(后面称 Side Panel) -> sp
+
+每个浏览器插件，只会各有一个 Background 和 Side Panel，会有多个 Content Script，所以关于 Content Script 的通信，都需要带上对应的 tabId，保证 Background(Side Panel) 可以给指定的 Content Script 发消息。
+
+### 通用类型定义
+
+```typescript
+interface CetMessageItem<T = unknown> {
+  messageId: string;      // 消息ID
+  data: T;               // 消息数据
+  option: CetDestinationOption;  // 消息目标选项
+}
+// send 方法的返回值
+type CetMessageSendResult<R = unknown> {
+  data: R;               // 响应数据
+  messageId: string;     // 消息ID
+  tabId?: number;        // 标签页ID
+  success: boolean;      // 是否成功
+  msg?: string;         // 错误信息
+}
+type CetMessageCallback<T = unknown, R = unknown> = (data: T, params: CetMessageCallbackParams) => Promise<R>;
+export enum CetDestination {
+  CS = 'cs',
+  SP = 'sp',
+  BG = 'bg',
+}
+```
+
+#### 发送目标配置 - CetDestinationOption
+
+> 在 sendMessage 的时候，用于说明要发给谁
+
+```typescript
+export interface CetDestinationOption {
+  tabId?: number
+  tabUrl?: string
+  destination: CetDestination
+}
+```
+
+| 参数        | 值             | 是否必填 | 描述                                   |
+| ----------- | -------------- | -------- | -------------------------------------- |
+| tabId       | number         | N        | 发送给 content script 的时候，必须要传 |
+| tabUrl      | string         | N        |                                        |
+| destination | CetDestination | Y        | 要发给谁，cs/sp/bg                     |
+
+
+
+### 使用
+
+#### Background 发给 Content Script
+
+##### 例子
+
+Background 发给 Content Script 需要带上 tabId 才能指定发给谁：
+
+```typescript
+import { sendMsgByBG, CetDestination } from 'chrome-extension-tools'
+// tabId 要另外获取
+const res = await sendMsgByBG<{test: number}, number>('test1', { test: 1 }, { tabId: tabId, destination: CetDestination.cs })
+// res: CetMessageSendResult
+// res.data -> 1
+```
+
+Content Script 监听
+
+```typescript
+import { onMsgInCS, CetDestination } from 'chrome-extension-tools'
+onMsgInCS<{test: number}('test1', async (params) => {
+  return params.test // 返回 1
+})
+```
+
+##### 说明
+
+```typescript
+function sendMsgByBG<T = unknown, R = unknown>(
+  messageId: string,
+  data: T,
+  option: CetDestinationOption
+): Promise<CetMessageSendResult<R>>
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- data: 要发送的数据
+
+- option: 消息目标选项，包含目标组件和标签页ID等信息
+
+返回值： `Promise<CetMessageSendResult<R>>`
+
+#### Background 发给 side panel
+
+用法一致，并且无需传 tabId
+
+```typescript
+import { sendMsgByBG, CetDestination } from 'chrome-extension-tools'
+const res = await sendMsgByBG('test1', { ... }, { destination: CetDestination.sp })
+```
+
+#### Background 监听事件
+
+```typescript
+onMsgInBG<{test: number}('test1', async (params) => {
+  return params.test // 返回 1
+})
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- cb: 回调函数
+  - data: T
+  - params: CetMessageCallbackParams
+    - option: CetDestinationOption
+    - messageId: string
+
+返回值： `Promise<R>`
+
+#### Side Panel 发给 Background
+
+##### 例子
+
+```typescript
+import { sendMsgBySP, CetDestination } from 'chrome-extension-tools'
+const res = await sendMsgBySP('toBg', { ... }, { destination: CetDestination.BG });
+```
+
+##### 说明
+
+```typescript
+function sendMsgBySP<T = unknown, R = unknown>(
+  messageId: string,
+  data: T | undefined,
+  option: CetDestinationOption
+): Promise<CetMessageSendResult<R>>
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- data: 要发送的数据
+
+- option: 消息目标选项，包含目标组件和标签页ID等信息
+
+返回值： `Promise<CetMessageSendResult<R>>`
+
+#### Side Panel 发给 Content Script
+
+Side panel 发给 Content Script 需要带上 tabId 才能指定发给谁：
+
+```typescript
+import { sendMsgBySP, CetDestination, EVENTS } from 'chrome-extension-tools'
+const  { data } = await sendMsgBySP(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG });
+const res = await sendMsgBySP('test1', { ... }, { estination: CetDestination.CS, tabId: tabId })
+```
+
+Content Script 监听：
+
+```typescript
+import { onMsgInCS } from 'chrome-extension-tools'
+onMsgInCS('test1', async (res) => {
+  console.log('test1', res)
+  return 'ok'
+})
+```
+
+#### Side Panel 监听事件
+
+```typescript
+onMsgInSP<{test: number}('test1', async (params) => {
+  return params.test // 返回 1
+})
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- cb: 回调函数
+  - data: T
+  - params: CetMessageCallbackParams
+    - option: CetDestinationOption
+    - messageId: string
+
+返回值： `Promise<R>`
+
+#### Content Script 发给 Background
+
+##### 例子
+
+Content Script 发送给 Background，可以不带 tabId
+
+```typescript
+import { sendMsgByCS } from 'chrome-extension-tools'
+const res = await sendMsgByCS<{name: string}, any>('test2', { name: 'task1' }, { destination: CetDestination.BG })
+```
+
+##### 说明
+
+```typescript
+function sendMsgByCS<T = unknown, R = unknown>(
+  messageId: string,
+  data: T,
+  option: CetDestinationOption
+): Promise<CetMessageSendResult<R>>
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- data: 要发送的数据
+
+- option: 消息目标选项，包含目标组件和标签页ID等信息
+
+返回值： `Promise<CetMessageSendResult<R>>`
+
+#### Content Script 发给 side panel
+
+Content Script 发给 side panel：
+
+```typescript
+import { CetDestination, sendMsgBySP } from 'chrome-extension-tools'
+const { data } = await sendMsgByCS<undefined, any>('test3', undefined, { destination: CetDestination.SP })
+```
+
+#### Content Script 监听事件
+
+```typescript
+import { CetDestination, onMsgInCS } from 'chrome-extension-tools'
+onMsgInCS('test3', async (res) => {
+  console.log('test3', res)
+  return 'ok'
+})
+```
+
+参数：
+
+- messageId: 消息唯一标识符
+
+- cb: 回调函数
+  - data: T
+  - params: CetMessageCallbackParams
+    - option: CetDestinationOption
+    - messageId: string
+
+返回值： `Promise<R>`
 
 ## 工作流的使用
 
@@ -203,126 +472,6 @@ export function initBackground() {
     return result
   })
 }
-```
-
-
-
-## 消息通信
-
-### 简介
-
-> 目前有很多相关的封装，但这块消息通信的复杂度并不高，为了方便和更适配我的写法，所以我自己重新封装了消息通信的功能。
-
-封装 Chrome Extension 的消息方法，统一 Background, Content Script 和 Side Panel 的消息通信：
-
-1. 统一的消息格式：所有消息具有一致的数据结构，便于处理和调试，简化使用
-2. 双向通信：支持发送消息并接收响应
-3. 类型安全：完整的TypeScript类型支持（未完善）
-
-浏览器的消息通信由三个部分组成：
-
-1. Background(Service) -> sv
-2. Content Script -> cs
-3. popup/Side Panel(后面称 Side Panel) -> sp
-
-每个浏览器插件，只会各有一个 Background 和 Side Panel，会有多个 Content Script，所以关于 Content Script 的通信，都需要带上对应的 tabId，保证 Background(Side Panel) 可以给指定的 Content Script 发消息。
-
-### 发送和接收的数据结构
-
-```typescript
-// send
-const result = await sendMsgByCS(messageId, data, { destination: CetDestination.BG , tabId?: ...})
-// receive
-onMsgInBg(messageId, (data, params) => {
-  return xx
-})
-
-export interface CetMessageCallbackParams {
-  tabId?: number
-  option: CetDestinationOption
-  messageId: string
-}
-export interface CetMessageSendResult<T = unknown> {
-  data: T
-  tabId?: number
-  messageId: string
-  success: boolean
-  msg?: string
-}
-
-```
-
-### 使用
-
-#### Background 发给 Content Script
-
-Background 发给 Content Script 需要带上 tabId 才能指定发给谁：
-
-```typescript
-import { sendMsgByBG, CetDestination } from 'chrome-extension-tools'
-const res = await sendMsgByBG('test1', { ... }, { tabId: tabId, destination: CetDestination.cs })
-```
-
-#### Background 发给 side panel
-
-```typescript
-import { sendMsgByBG, CetDestination } from 'chrome-extension-tools'
-const res = await sendMsgByBG('test1', { ... }, { destination: CetDestination.sp })
-```
-
-#### side panel 发给 Background
-
-```typescript
-import { sendMsgBySP, CetDestination } from 'chrome-extension-tools'
-const res = await sendMsgBySP('toBg', { ... }, { destination: CetDestination.BG });
-```
-
-#### side panel 发给 Content Script
-
-Side panel 发给 Content Script 需要带上 tabId 才能指定发给谁：
-
-```typescript
-import { sendMsgBySP, CetDestination, EVENTS } from 'chrome-extension-tools'
-const  { data } = await sendMsgBySP(EVENTS.SP2BG_GET_CURRENT_TAB, undefined, { destination: CetDestination.BG });
-const res = await sendMsgBySP('test1', { ... }, { estination: CetDestination.CS, tabId: tabId })
-```
-
-Content Script 监听：
-
-```typescript
-import { onMsgInCS } from 'chrome-extension-tools'
-onMsgInCS('test1', async (res) => {
-  console.log('test1', res)
-  return 'ok'
-})
-```
-
-#### Content Script 发给 Background
-
-Content Script 发送给 Background，可以不带 tabId
-
-```typescript
-import { sendMsgByCS } from 'chrome-extension-tools'
-const res = await sendMsgByCS('test2', { name: 'task1' }, { destination: CetDestination.BG })
-```
-
-#### Content Script 发给 side panel
-
-Content Script 发给 side panel：
-
-```typescript
-import { CetDestination, sendMsgBySP } from 'chrome-extension-tools'
-const { data } = await sendMsgByCS('test3', undefined, { destination: CetDestination.SP })
-```
-
-side panel 监听：
-
-```typescript
-import { CetDestination, onMsgInSP } from 'chrome-extension-tools'
-onMsgInCS('test3', async (res) => {
-  console.log('test3', res)
-  return 'ok'
-})
 ```
 
 
@@ -530,8 +679,6 @@ logger.clearLogs()
 // 获取当前缓存大小
 const cacheSize = logger.getCacheSize()
 ```
-
-
 
 ## 工具函数
 
