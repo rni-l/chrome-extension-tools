@@ -2,7 +2,7 @@
 
 ## 简介
 
-封装了在开发浏览器插件时所用到的组件，比如工作流配置、接口拦截、消息通知、日志和一些工具函数等。
+封装了在开发浏览器插件时所用到的组件，比如工作流配置、接口拦截、消息通知、日志和一些工具函数等，帮助你开发浏览器插件自动化的需求。
 
 ## 主要特点
 
@@ -31,20 +31,19 @@
 
 浏览器的消息通信由三个部分组成：
 
-1. Background(Service) -> sv
+1. Background(Service) -> bg
 2. Content Script -> cs
 3. popup/Side Panel(后面称 Side Panel) -> sp
 
-每个浏览器插件，只会各有一个 Background 和 Side Panel，会有多个 Content Script，所以关于 Content Script 的通信，都需要带上对应的 tabId，保证 Background(Side Panel) 可以给指定的 Content Script 发消息。
+每个浏览器插件，有一个 Background 和 Side Panel，还有多个 Content Script，所以关于 Content Script 的通信，都需要带上对应的 tabId，保证 Background(Side Panel) 可以给指定的 Content Script 发消息。
 
 ### 通用类型定义
 
 ```typescript
-interface CetMessageItem<T = unknown> {
-  messageId: string;      // 消息ID
-  data: T;               // 消息数据
-  option: CetDestinationOption;  // 消息目标选项
-}
+// 发送的参数
+// sendMsgByBG, sendMsgBySP, sendMsgByCS 三个方法的参数结构都是一样的：
+const res: CetMessageSendResult = sendMsgByBG(messageId, data, destination: { tabId?: number, destination: CetDestination })
+
 // send 方法的返回值
 type CetMessageSendResult<R = unknown> {
   data: R;               // 响应数据
@@ -53,8 +52,15 @@ type CetMessageSendResult<R = unknown> {
   success: boolean;      // 是否成功
   msg?: string;         // 错误信息
 }
+  
+// 监听事件和发送一样
+// onMsgInBG, onMsgInSP, onMsgInCS 三个方法的参数结构都是一样的：
 type CetMessageCallback<T = unknown, R = unknown> = (data: T, params: CetMessageCallbackParams) => Promise<R>;
-export enum CetDestination {
+onMsgInBG(messageId, cb: CetMessageCallback)
+
+
+// 目标地点的枚举值
+**export** enum CetDestination {
   CS = 'cs',
   SP = 'sp',
   BG = 'bg',
@@ -292,6 +298,14 @@ onMsgInCS('test3', async (res) => {
 
 ### 快速使用
 
+#### 主要功能
+
+1. 任务定义：支持通过配置对象定义复杂的任务结构
+2. 任务流控制：基于任务执行结果动态决定下一步执行路径
+3. 任务重试：内置任务重试机制，可自定义重试次数和间隔
+4. 循环执行：支持循环数据处理，可动态添加循环项
+5. 生命周期钩子：提供任务前后的回调函数，便于扩展和监控
+
 #### 初始化
 
 Background:
@@ -390,18 +404,528 @@ async function start() {
      +---------------+
 ```
 
-### 主要功能
+#### 文件结构
 
-1. 任务定义：支持通过配置对象定义复杂的任务结构
-2. 任务流控制：基于任务执行结果动态决定下一步执行路径
-3. 任务重试：内置任务重试机制，可自定义重试次数和间隔
-4. 循环执行：支持循环数据处理，可动态添加循环项
-5. 生命周期钩子：提供任务前后的回调函数，便于扩展和监控
+首先要看下文件结构，因为 bg, sp, cs 的文件都是放在 src/ 下面的，配置和一些工具方法都是可以混用的，但打包之后会有三个独立的入口文件，所以在运行时它们三个都上下文都是独立的，一些变量是不能共用的。以 [chrome-extension-demo](https://github.com/rni-l/chrome-extension-demo) 为例：
+
+```shell
+.
+├── background
+│   └── main.ts
+├── components
+├── constants
+├── contentScripts
+│   ├── index.ts
+├── sidepanel
+│   └── main.ts
+├── tasks
+│   └── index.task.ts
+└── utils
+    └── index.ts
+```
+
+#### 配置工作流
+
+#### 工作流配置项
+
+```typescript
+import type { CetWorkFlowConfigure } from 'chrome-extension-tools'
+import {
+  CetDestination,
+  CetLogLevel,
+  CetLogger,
+  loopCheck,
+  sendMsgBySP,
+  EVENTS
+} from 'chrome-extension-tools'
+export function getTasks(): CetWorkFlowConfigure[] {
+  return [
+    {
+      name: '打开网页',
+      // 在 sp 执行
+      spBeforeFn: async () => {
+        // 通知 bg 打开一个新 tab
+        await sendMsgBySP(EVENTS.EVENT_OPEN_URL_SP2BG, { url: 'https://www.baidu.com' }, { destination: CetDestination.BG })
+        // 打开后，返回 { next: true }，告诉执行器该方法执行成功，继续下一步
+        return {
+          next: true,
+        }
+      },
+    },
+  ]
+}
+```
+
+##### 在 sp 执行 spBeforeFn 和 spAfterFn
+Side Panel 中执行的前置和后置函数，是为了在 csFn 的前后可以做一些动作：
+```typescript
+{
+  name: '打开页面',
+  spBeforeFn: async (params) => {
+    return { next: true }
+  },
+  spAfterFn: async (params) => {
+    console.log('页面数据:', params.csFnResult.data)
+    return { next: true }
+  }
+}
+```
+
+##### 在 cs 执行 csFn
+Content Script 中执行的函数，用于操作页面 DOM、获取页面数据等：
+
+```typescript
+{
+  name: '获取数据',
+  csFn: async (params) => {
+    const data = document.querySelector('#target')?.textContent
+    return {
+      next: !!data,
+      data
+    }
+  }
+}
+```
+
+##### 控制是否执行下去
+通过返回对象中的 next 属性控制工作流程，spBeforeFn, csFn, spAfterFn 都要返回：
+- next: true - 继续执行下一个任务
+- next: false - 终止当前工作流
+
+```typescript
+{
+  name: '条件检查',
+  csFn: async (params) => {
+    const isValid = document.querySelector('.valid')
+    return {
+      next: !!isValid, // 只有当元素存在时才继续
+      data: isValid?.textContent
+    }
+  }
+}
+```
+
+##### spBeforeFn 传递给 csFn
+spBeforeFn 的返回值可以通过 params.spBeforeFnResult 传递给 csFn：
+
+```typescript
+{
+  name: '数据传递',
+  spBeforeFn: async () => {
+    return {
+      next: true,
+      data: { searchKey: 'test' }
+    }
+  },
+  csFn: async (params) => {
+    const { searchKey } = params.spBeforeFnResult.data
+    document.querySelector('input').value = searchKey
+    return { next: true }
+  }
+}
+```
+
+##### csFn 传递给 spAfterFn
+csFn 的返回值可以通过 params.csFnResult 传递给 spAfterFn：
+
+```typescript
+{
+  name: '数据处理',
+  csFn: async () => {
+    const data = document.querySelector('#result').textContent
+    return {
+      next: true,
+      data
+    }
+  },
+  spAfterFn: async (params) => {
+    const result = params.csFnResult.data
+    // 处理数据
+    return { next: true }
+  }
+}
+```
+
+##### 循环结构
+通过 loopData 配置实现任务的循环执行：
+
+```typescript
+{
+  name: '循环任务',
+  loopData: [{ name: 't1', value: 't1', },{ name: 't2', value: 't2', }],
+  children: [
+    {
+      name: 'test',
+      spBeforeFn: async (params) => {
+        const { currentLoopData, currentLoopIndex } = params
+        console.log(`处理第 ${currentLoopIndex} 项: ${currentLoopData}`)
+        return { next: true }
+      },
+      csFn: async (params) => {
+        const { currentLoopData, currentLoopIndex } = params
+        console.log(`处理第 ${currentLoopIndex} 项: ${currentLoopData}`)
+        return { next: true }
+      },
+      spAfterFn: async (params) => {
+        const { currentLoopData, currentLoopIndex } = params
+        console.log(`处理第 ${currentLoopIndex} 项: ${currentLoopData}`)
+        return { next: true }
+      }
+    }
+  ]
+}
+```
+
+##### 循环结构出现失败情况，还会继续下一个循环
+
+```typescript
+[
+  {
+    name: '循环任务',
+    loopData: [{ name: 't1', value: 't1', },{ name: 't2', value: 't2', }],
+    children: [
+      {
+        name: 'test',
+        spBeforeFn: async (params) => {
+          const { currentLoopData, currentLoopIndex } = params
+          console.log(`处理第 ${currentLoopIndex} 项: ${currentLoopData}`)
+          return { next: currentLoopIndex === 1 }
+        },
+      }
+    ]
+  },
+  {
+    name: 'test2'
+  }
+]
+```
+
+以上面为例，第一个循环失败，但会执行下一个循环。
+
+如果循环都失败还是会执行 `test2` 的任务，也就是循环结构，不会影响父层级。
+
+##### 工作流结束的返回值
+
+工作流执行完成后返回一个对象，包含执行状态和日志：
+
+```typescript
+const result = await actuator.run()
+// result 结构
+{
+  success: boolean      // 是否成功完成
+  logs: {              // 执行日志
+    name: string       // 任务名称
+    success: boolean   // 任务是否成功
+    spBeforeFn?: any  // spBeforeFn 执行结果
+    csFn?: any        // csFn 执行结果
+    spAfterFn?: any   // spAfterFn 执行结果
+  }[]
+}
+```
+
+##### csFn 失败重新执行
+通过 csRetryNumber 和 csRetryInterval 配置 Content Script 的重试机制：
+
+```typescript
+{
+  name: '重试任务',
+  csFn: async (params) => {
+    const element = document.querySelector('#dynamic-content')
+    return {
+      next: !!element,
+      data: element?.textContent
+    }
+  },
+  csRetryNumber: 3,        // 重试3次
+  csRetryInterval: 1000    // 每次间隔1秒
+}
+```
+
+##### 忽略 csFn 的失败，继续执行
+通过 skipCsCallbackFail 配置是否忽略 Content Script 执行失败：
+
+```typescript
+{
+  name: '可选任务',
+  csFn: async () => {
+    return { next: false }
+  },
+  skipCsCallbackFail: true  // 即使 csFn 返回 false 也继续执行
+}
+```
+
+##### 任务失败，可返回重新执行
+通过返回 retryTarget 指定失败后要重试的任务：
+
+```typescript
+{
+  name: '数据校验',
+  csFn: async (params) => {
+    const isValid = document.querySelector('.valid')
+    return {
+      next: false,
+      retryTarget: isValid ? undefined : '重新登录'  // 验证失败时返回指定任务
+    }
+  }
+}
+```
+
+#### API
+
+| 配置项             | 类型                                                         | 必填 | 描述                                         |
+| ------------------ | ------------------------------------------------------------ | ---- | -------------------------------------------- |
+| name               | string                                                       | 是   | 任务名称，用于标识和查找任务                 |
+| children           | CetWorkFlowConfigure[]                                       | 否   | 子任务列表，用于构建任务树                   |
+| spBeforeFn         | (params: CetCommonParams) => Promise<CetSpFnResult>          | 否   | Side Panel 任务执行前的回调函数              |
+| csFn               | (params: CsFnParams) => Promise<CetCsFnResult>               | 否   | Content Script 任务执行函数                  |
+| spAfterFn          | (params: CetCommonParams & { csFnResult: CetCsFnResultInTask }) => Promise<CetSpFnResult> | 否   | Side Panel 任务执行后的回调函数              |
+| csRetryNumber      | number                                                       | 否   | Content Script 任务重试次数，默认 0          |
+| csRetryInterval    | number                                                       | 否   | Content Script 任务重试间隔(ms)，默认 1000   |
+| retryNumber        | Number                                                       | 否   | 当前任务失败时，重新执行多少次               |
+| retryTarget        | String                                                       | 否   | 当前任务失败时，重新执行哪个步骤？           |
+| skipCsCallbackFail | boolean                                                      | 否   | 是否跳过 Content Script 回调失败，默认 false |
+| loopData           | CetLoopDataItem[]                                            | 否   | 循环数据项，用于循环执行任务                 |
+
+三个方法 spBeforeFn, csFn, spAfterFn 的执行顺序，必须是异步的：
+
+spBeforeFn -> csFn -> spAfterFn
+
+##### spBeforeFn 参数
+
+CetCommonParams： 
+
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| isFirstLevel | boolean | 是否为第一层级任务 |
+| name | string | 当前任务名称 |
+| tabId | number | 当前标签页ID |
+| userOption | object | 用户自定义选项，用于传递自定义参数 |
+| retryNumber? | number | 当前重试次数（仅在重试时存在） |
+| currentLoopData? | any | 当前循环数据（仅在循环任务中存在） |
+| currentLoopIndex? | number | 当前循环索引（仅在循环任务中存在） |
+
+##### spBeforeFn 返回值
+
+CetSpFnResult： 
+
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| next | boolean | 是 | 是否继续执行下一步，false 则终止任务 |
+| data? | any | 否 | 传递给下一步的数据 |
+
+##### csFn 参数
+
+CsFnParams:
+
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| isFirstLevel | boolean | 是否为第一层级任务 |
+| name | string | 当前任务名称 |
+| tabId | number | 当前标签页ID |
+| userOption | object | 用户自定义选项 |
+| spBeforeFnResult | CetSpFnResult | spBeforeFn 的执行结果 |
+| csRetryNumber | number | 当前重试次数 |
+| retryNumber? | number | 当前任务重试次数（仅在重试时存在） |
+| currentLoopData? | any | 当前循环数据（仅在循环任务中存在） |
+| currentLoopIndex? | number | 当前循环索引（仅在循环任务中存在） |
+
+##### csFn 返回值
+
+CetCsFnResult:
+
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| next | boolean | 是 | 是否继续执行下一步，false 则终止任务 |
+| data? | any | 否 | 传递给下一步的数据 |
+| retryTarget? | string | 否 | 指定重试的目标任务名称 |
+
+##### spAfterFn 参数
+
+CetCommonParams & { csFnResult: CetCsFnResultInTask }：
+
+| 参数名 | 类型 | 描述 |
+|--------|------|------|
+| isFirstLevel | boolean | 是否为第一层级任务 |
+| name | string | 当前任务名称 |
+| tabId | number | 当前标签页ID |
+| userOption | object | 用户自定义选项 |
+| csFnResult | CetCsFnResultInTask | Content Script 执行的结果 |
+| retryNumber? | number | 当前重试次数（仅在重试时存在） |
+| currentLoopData? | any | 当前循环数据（仅在循环任务中存在） |
+| currentLoopIndex? | number | 当前循环索引（仅在循环任务中存在） |
+
+其中 csFnResult 的结构为：
+
+| 属性名      | 类型    | 描述                          |
+| ----------- | ------- | ----------------------------- |
+| data        | any     | Content Script 执行返回的数据 |
+| next        | boolean | 是否继续执行                  |
+| retryTarget | string  | 重试目标任务名称              |
+| tabId       | number  | 当前标签页 ID                 |
+| tabUrl      | string  | 当前标签页 URL                |
+
+##### spAfterFn 返回值
+
+CetSpFnResult：
+
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| next | boolean | 是 | 是否继续执行下一步，false 则终止任务 |
+| data? | any | 否 | 传递给下一步的数据 |
+| retryTarget? | string | 否 | 指定重试的目标任务名称 |
+
+#### 配置工作流例子
+
+```typescript
+import type { CetWorkFlowConfigure } from 'chrome-extension-tools'
+import {
+  CetDestination,
+  CetLogLevel,
+  CetLogger,
+  loopCheck,
+  sendMsgBySP,
+  EVENTS
+} from 'chrome-extension-tools'
+import { EVENT_INJECT_INTERCEPT_SCRIPT_SP2BG } from '~/constants'
+
+export const logger = new CetLogger({
+  level: CetLogLevel.INFO,
+})
+
+export enum TaskNames {
+  open = '打开网页',
+  check = '检查网页',
+  intercept = '拦截请求',
+  input = '输入内容',
+  click = '点击按钮',
+  close = '关闭网页',
+}
+
+// 定义工作流，给到 sp 和 cs 使用
+export function getTasks(): CetWorkFlowConfigure[] {
+  return [
+    {
+      name: TaskNames.open,
+      spBeforeFn: async () => {
+        sendMsgBySP(EVENTS.EVENT_OPEN_URL_SP2BG, { url: 'https://www.baidu.com' }, { destination: CetDestination.BG })
+        return {
+          next: true,
+        }
+      },
+    },
+    {
+      name: TaskNames.check,
+      spBeforeFn: async (params) => {
+        const result = await sendMsgBySP<{ tabId?: number }, boolean>(
+          EVENTS.EVENT_CHECK_TAB_STATUS_SP2BG,
+          { tabId: params.tabId },
+          { destination: CetDestination.BG },
+        )
+        return {
+          next: !!result.data,
+        }
+      },
+      csFn: async () => {
+        const next = await loopCheck(async () => {
+          const dom = document.querySelector<HTMLElement>('#s_lg_img_new')
+          return !!dom
+        })
+        return {
+          next,
+        }
+      },
+    },
+    {
+      name: TaskNames.intercept,
+      spBeforeFn: async () => {
+        await sendMsgBySP(EVENT_INJECT_INTERCEPT_SCRIPT_SP2BG, {}, { destination: CetDestination.BG })
+        await sendMsgBySP(EVENTS.EVENT_RELOAD_SP2BG, {}, { destination: CetDestination.BG })
+        return {
+          next: true,
+        }
+      },
+      spAfterFn: async (params) => {
+        const result = await sendMsgBySP<{ tabId?: number }, boolean>(
+          EVENTS.EVENT_CHECK_TAB_STATUS_SP2BG,
+          { tabId: params.tabId },
+          { destination: CetDestination.BG },
+        )
+        return {
+          next: !!result.data,
+        }
+      },
+    },
+    {
+      name: TaskNames.input,
+      csFn: async () => {
+        const next = await loopCheck(async () => {
+          const dom = document.querySelector<HTMLInputElement>('.new-pmd input')
+          if (!dom)
+            return false
+          dom.value = 'test'
+          return true
+        })
+        return {
+          next,
+        }
+      },
+    },
+    {
+      name: TaskNames.click,
+      csFn: async () => {
+        const next = await loopCheck(async () => {
+          const dom = document.querySelector<HTMLElement>('.s_btn_wr input')
+          if (!dom)
+            return false
+          dom.click()
+          return true
+        })
+        return {
+          next,
+        }
+      },
+    },
+    {
+      name: TaskNames.close,
+      csFn: async () => {
+        const text: string[] = []
+        const next = await loopCheck(async () => {
+          const list = document.querySelectorAll<HTMLElement>('.result')
+          if (!list || list.length === 0)
+            return false
+          Array.from(list).forEach((item) => {
+            text.push(item.textContent || '')
+          })
+          return true
+        })
+        return {
+          next,
+          data: text,
+        }
+      },
+      spAfterFn: async (params) => {
+        sendMsgBySP(EVENTS.EVENT_REMOVE_TAB_SP2BG, { tabId: params.tabId }, { destination: CetDestination.BG })
+        logger.info(params.csFnResult.data)
+        return {
+          next: true,
+        }
+      },
+    },
+  ]
+}
+
+```
+
+
 
 ### 注意点
 
 1. Conten Script 和 Side Panel 会使用一样的任务配置，但它们的上下文是互相独立，所以在写任务配置时，要注意点
 2. 页面跳转或刷新后，Content Script 都会重新注入，要注意如何缓存变量
+
+#### 独立上下文
+
+bg, sp, cs 都可以使用 `tasks/index.task.ts` 这个工作流的配置文件和 `utils/index.ts` 的工具方法，但在写配置文件的时候，通常都需要使用一些缓存变量，这里要开发者自己区分号定义变量时，是给 cs 还是 sp 使用，sp 只要侧边栏没有刷新或收起来，则会一些存在，而 cs 是针对于页面的，当页面刷新，cs 的上下文也会刷新。
 
 ### 内置事件清单
 
@@ -419,6 +943,7 @@ async function start() {
 内置的默认事件：
 
 ```typescript
+// 该方法可以从 chrome-extension-tools 获取
 export function initBackground() {
   cetBGLogger.info('initBackground')
   onMsgInBG<CetLogEntry>(EVENTS.CS2BG_LOG, async (data) => {
@@ -473,8 +998,6 @@ export function initBackground() {
   })
 }
 ```
-
-
 
 ## 请求拦截组件
 
