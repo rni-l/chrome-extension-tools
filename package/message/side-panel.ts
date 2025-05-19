@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 22:00:08
- * @LastEditTime: 2025-03-15 11:07:49
+ * @LastEditTime: 2025-05-19 14:04:19
  * @LastEditors: Lu
  * @Description:
  */
@@ -98,6 +98,7 @@ export function sendMsgBySP<T = unknown, R = unknown>(
         messageId,
         success: false,
         msg: 'tabId is required',
+        notResponse: false,
       })
     }
     // console.log(messageId, data, option)
@@ -106,6 +107,7 @@ export function sendMsgBySP<T = unknown, R = unknown>(
         cetSPLogger.info('sp sendMsgBySP', serializeJSON(response))
       }
       if (option.destination === CetDestination.CS) {
+        // console.log('sp sendMsgBySP response', response)
         // 因为会经过 bg，所以需要拆分数据
         const response2 = response.data as CetMessageCallbackResult<R>
         return res({
@@ -114,6 +116,7 @@ export function sendMsgBySP<T = unknown, R = unknown>(
           messageId,
           success: response2?.success || false,
           msg: response2?.msg,
+          notResponse: response === undefined || response2 === undefined || !!(response2.notResponse),
         })
       }
       res({
@@ -122,6 +125,7 @@ export function sendMsgBySP<T = unknown, R = unknown>(
         messageId,
         success: response?.success || false,
         msg: response?.msg,
+        notResponse: response === undefined,
       })
     })
   })

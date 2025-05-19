@@ -49,7 +49,10 @@
     "test": "vitest --config vite.config.ts",
     "up": "taze major -I",
     "postinstall": "npx simple-git-hooks",
-    "tsc": "tsc --project tsconfig.build.json"
+    "tsc": "tsc --project tsconfig.build.json",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "dayjs": "^1.11.13"

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "chrome-extension-tools",
-  "version": "0.0.3",
+  "version": "0.0.7",
   "action": {
     "default_icon": "./assets/icon-512.png",
     "default_popup": "./dist/popup/index.html"
@@ -50,7 +50,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' http://localhost:3304; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "side_panel": {
     "default_path": "dist/sidepanel/index.html"

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-03-06 15:27:12
+ * @LastEditTime: 2025-05-19 14:03:52
  * @LastEditors: Lu
  * @Description:
  */
@@ -46,7 +46,9 @@ export function sendMsgByBG<T = unknown, R = unknown>(
         if (checkIsNotLog(messageId)) {
           cetBGLogger.info('sendMsgByBG response2', serializeJSON(response))
         }
+        // console.log('sendMsgByBG response2', response)
         res({
+          notResponse: response === undefined,
           data: response?.data as R,
           messageId,
           tabId: option.tabId,
@@ -70,6 +72,7 @@ export function sendMsgByBG<T = unknown, R = unknown>(
           tabId: option.tabId,
           success: response?.success || false,
           msg: response?.msg,
+          notResponse: response === undefined,
         })
       })
     }

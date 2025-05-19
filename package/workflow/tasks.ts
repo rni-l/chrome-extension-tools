@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-03-20 00:40:07
+ * @LastEditTime: 2025-05-19 14:04:01
  * @LastEditors: Lu
  * @Description:
  */
@@ -110,16 +110,19 @@ export class CetTask {
     const csResult: CetCsFnResultInTask = getCommonCsResult()
     if (configure.csFn) {
       await loopCheck(async (number) => {
-        const res = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, {
+        const csFnParams: CsFnParams = {
           ...commonParams,
           spBeforeFnResult: spBeforeResult,
           csRetryNumber: number,
           tabId: this.tabId,
-        }, {
+        }
+        // console.log('run csFn', csFnParams, this.tabId)
+        const res = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, csFnParams, {
           destination: CetDestination.CS,
           tabId: this.tabId,
         })
-        if (!res) {
+        csResult.sendResult = res
+        if (!res || res.notResponse) {
           csResult.data = undefined
           csResult.next = false
           return false

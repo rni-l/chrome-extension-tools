@@ -9,3 +9,7 @@ node_modules
 *.log
 
 html
+
+
+docs/.vitepress/dist
+docs/.vitepress/cache

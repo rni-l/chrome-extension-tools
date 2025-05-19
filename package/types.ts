@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-03-22 17:54:23
+ * @LastEditTime: 2025-05-19 11:37:11
  * @LastEditors: Lu
  * @Description:
  */
@@ -43,6 +43,7 @@ export interface CetCsFnResult<T = unknown> {
 export interface CetCsFnResultInTask<T = unknown> extends CetCsFnResult<T> {
   tabId?: number
   tabUrl?: string
+  sendResult?: any
 }
 export interface CetSpBeforeFnParams extends CetCommonParams {}
 export interface CetSpAfterFnParams extends CetCommonParams {
@@ -148,6 +149,7 @@ export interface CetMessageSendResult<T = unknown> {
   tabUrl?: string
   messageId: string
   msg?: string
+  notResponse: boolean
 }
 /**
  * chrome.runtime.sendMessage 的 response 类型
@@ -155,6 +157,7 @@ export interface CetMessageSendResult<T = unknown> {
 export interface CetMessageCallbackResult<R = unknown> {
   data: R | undefined
   success: boolean
+  notResponse: boolean
   msg?: string
 }
 export type CetMessageCallback<T = unknown, R = unknown> = (data: T, params: CetMessageCallbackParams) => Promise<R>

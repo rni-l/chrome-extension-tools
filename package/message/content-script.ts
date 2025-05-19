@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:59
- * @LastEditTime: 2025-03-15 10:52:56
+ * @LastEditTime: 2025-05-19 14:04:27
  * @LastEditors: Lu
  * @Description:
  */
@@ -80,6 +80,7 @@ export function sendMsgByCS<T = unknown, R = unknown>(
         messageId,
         success: response?.success || false,
         msg: response?.msg,
+        notResponse: response === undefined,
       })
     })
   })
