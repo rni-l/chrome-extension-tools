@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-07 17:44:15
- * @LastEditTime: 2025-05-19 14:04:01
+ * @LastEditTime: 2025-05-20 14:19:35
  * @LastEditors: Lu
  * @Description:
  */
@@ -116,11 +116,12 @@ export class CetTask {
           csRetryNumber: number,
           tabId: this.tabId,
         }
-        // console.log('run csFn', csFnParams, this.tabId)
+        console.log('run csFn', csFnParams, 'tabId:', this.tabId)
         const res = await sendMsgBySP<CsFnParams, CetCsFnResultInTask>(EVENTS.SP2CS_EXECUTE_TASK, csFnParams, {
           destination: CetDestination.CS,
           tabId: this.tabId,
         })
+        console.log('res', res)
         csResult.sendResult = res
         if (!res || res.notResponse) {
           csResult.data = undefined

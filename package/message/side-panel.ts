@@ -107,7 +107,7 @@ export function sendMsgBySP<T = unknown, R = unknown>(
         cetSPLogger.info('sp sendMsgBySP', serializeJSON(response))
       }
       if (option.destination === CetDestination.CS) {
-        // console.log('sp sendMsgBySP response', response)
+        console.log('sp sendMsgBySP response', response)
         // 因为会经过 bg，所以需要拆分数据
         const response2 = response.data as CetMessageCallbackResult<R>
         return res({

@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-02-20 21:59:55
- * @LastEditTime: 2025-05-19 14:03:52
+ * @LastEditTime: 2025-05-20 11:07:12
  * @LastEditors: Lu
  * @Description:
  */
@@ -46,7 +46,7 @@ export function sendMsgByBG<T = unknown, R = unknown>(
         if (checkIsNotLog(messageId)) {
           cetBGLogger.info('sendMsgByBG response2', serializeJSON(response))
         }
-        // console.log('sendMsgByBG response2', response)
+        console.log('sendMsgByBG response2', response)
         res({
           notResponse: response === undefined,
           data: response?.data as R,
