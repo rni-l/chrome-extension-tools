@@ -2,7 +2,7 @@ import type { CetWorkFlowConfigure } from './types'
 /*
  * @Author: Lu
  * @Date: 2025-02-05 17:02:05
- * @LastEditTime: 2025-03-22 17:56:36
+ * @LastEditTime: 2025-08-06 10:35:01
  * @LastEditors: Lu
  * @Description:
  */
@@ -160,4 +160,15 @@ export async function checkTabStatus(tabId: number): Promise<boolean> {
     return checkTabStatus(tabId)
   }
   return result
+}
+
+export function filterConfigures(configures: CetWorkFlowConfigure[]): CetWorkFlowConfigure[] {
+  return configures.filter((item) => {
+    return !item.isSkip
+  }).map((v) => {
+    return {
+      ...v,
+      children: v.children ? filterConfigures(v.children) : undefined,
+    }
+  })
 }

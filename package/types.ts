@@ -1,7 +1,7 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:25:44
- * @LastEditTime: 2025-05-19 11:37:11
+ * @LastEditTime: 2025-08-06 10:31:58
  * @LastEditors: Lu
  * @Description:
  */
@@ -79,6 +79,7 @@ export interface CetWorkFlowConfigure {
   retryNumber?: number
   retryTarget?: string
   skipCsCallbackFail?: boolean
+  isSkip?: boolean
   csFn?: CetCsFn
   spBeforeFn?: CetSpBeforeFn
   spAfterFn?: CetSpAfterFn

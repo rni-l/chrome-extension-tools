@@ -1,13 +1,13 @@
 /*
  * @Author: Lu
  * @Date: 2025-01-24 10:28:18
- * @LastEditTime: 2025-05-19 14:04:10
+ * @LastEditTime: 2025-08-06 10:35:13
  * @LastEditors: Lu
  * @Description:
  */
 import type { CetActuatorCache, CetActuatorParams, CetActuatorResult, CetActuatorResultLogItem, CetActuatorRunOptions, CetTaskRunOptions, CetWorkFlowConfigure } from '../types'
 import type { CetTask, TCetTask } from './tasks'
-import { SimpleStack } from '../utils'
+import { filterConfigures, SimpleStack } from '../utils'
 import { findParentTask, findTaskByIndexPath, getTaskTree } from './tasks'
 
 const C_NEXT_TIME = 1000 * 1 * 60
@@ -16,7 +16,7 @@ export class CetActuator {
   configures: CetWorkFlowConfigure[]
   params: CetActuatorParams
   constructor(conConfigure: CetWorkFlowConfigure[], conParams?: CetActuatorParams) {
-    this.configures = conConfigure
+    this.configures = filterConfigures(conConfigure)
     this.params = conParams || { nextTime: C_NEXT_TIME }
   }
 
