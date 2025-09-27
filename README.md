@@ -357,7 +357,6 @@ async function start() {
   // 初始化工作流对象
   const ins = new CetActuator(getTasks(), {
     // 每次执行任务前，工作流模块会执行 getTabId 事件，返回 tabId
-    // @ts-ignore
     getTabId: async () => {
       const tab = await getTab()
       return tab ? tab.id : undefined
@@ -375,6 +374,30 @@ async function start() {
   logger.info('全流程结束')
 }
 ```
+
+#### 支持逐步执行
+
+```javascript
+import { CetActuator, CetDestination, EVENTS, onMsgInSP, sendMsgBySP } from 'chrome-extension-tools'
+
+// 执行工作流任务
+async function start() {
+  logger.info('开始执行')
+  // 初始化工作流对象
+  const ins = new CetActuator(tasks, {})
+  // 逐步执行工作流
+  while (true) {
+      const { success, isEnd, logs } = await ins.runOne()
+      if (!success || isEnd) {
+        console.log(logs)
+        break;
+      }
+  }
+  logger.info('全流程结束')
+}
+```
+
+
 
 ### 使用说明
 

@@ -94,6 +94,9 @@ export interface CetActuatorResult {
   logs: CetActuatorResultLogItem[]
   success: boolean
 }
+export interface CetActuatorOneResult extends CetActuatorResult {
+  isEnd: boolean
+}
 export interface CetActuatorResultLogItem {
   name: string
   spBeforeFn?: CetSpFnResult<any>

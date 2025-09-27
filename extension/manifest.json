@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "chrome-extension-tools",
-  "version": "0.0.7",
+  "version": "0.0.11",
   "action": {
     "default_icon": "./assets/icon-512.png",
     "default_popup": "./dist/popup/index.html"

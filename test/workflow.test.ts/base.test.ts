@@ -334,4 +334,44 @@ describe('工作流：Actuator', () => {
       expect(success).toBe(true)
     })
   })
+
+  describe('逐步测试', () => {
+    it('支持类似任务队列的方式，逐个步骤执行，默认第一个是 Root 步骤，第二个开始才是业务步骤', async () => {
+      targetData = testData02
+      const ins = new CetActuator(targetData)
+      let executeNumber = 0
+      let next = true
+      while (next) {
+        const { logs, success, isEnd } = await ins.runOne()
+        // console.log('log ----- ', success, isEnd)
+        // console.log(logs)
+        executeNumber += 1
+        expect(success).toBe(true)
+        if (isEnd) {
+          next = false
+        }
+      }
+      expect(executeNumber).toBe(3)
+    })
+    it('只执行两次步骤', async () => {
+      targetData = testData02
+      const ins = new CetActuator(targetData)
+      let executeNumber = 0
+      let next = true
+      let outputLogs: any = {}
+      while (next) {
+        const { logs, success, isEnd } = await ins.runOne()
+        // console.log('log ----- ', success, isEnd)
+        // console.log(logs)
+        executeNumber += 1
+        expect(success).toBe(true)
+        if (executeNumber === 2) {
+          outputLogs = logs
+          next = false
+        }
+      }
+      expect(executeNumber).toBe(2)
+      expect(outputLogs).toMatchObject([testData0Result])
+    })
+  })
 })

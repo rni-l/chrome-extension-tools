@@ -34,8 +34,8 @@ export const testData0Result: CetActuatorResultLogItem = {
   csFn: {
     next: true,
     data: 2,
-    tabId: tabId1,
-    tabUrl: tabUrl1,
+    // tabId: tabId1,
+    // tabUrl: tabUrl1,
   },
   spAfterFn: {
     next: true,
@@ -84,8 +84,8 @@ export const testData01Result: CetActuatorResultLogItem = {
       result: 'test',
       csFnParams,
     },
-    tabId: tabId1,
-    tabUrl: tabUrl1,
+    // tabId: tabId1,
+    // tabUrl: tabUrl1,
   },
   spAfterFn: {
     next: true,
